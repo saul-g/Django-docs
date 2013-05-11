@@ -1,0 +1,209 @@
+#########################
+Relaciones Many-to-one
+#########################
+
+.. highlight:: pycon
+
+Para definir una relacion muchos a uno, utilizamos la clase
+:class:`~django.db.models.ForeignKey`.
+
+.. code-block:: python
+
+    from django.db import models
+
+    class Reporter(models.Model):
+        first_name = models.CharField(max_length=30)
+        last_name = models.CharField(max_length=30)
+        email = models.EmailField()
+
+        def __unicode__(self):
+            return u"%s %s" % (self.first_name, self.last_name)
+
+    class Article(models.Model):
+        headline = models.CharField(max_length=100)
+        pub_date = models.DateField()
+        reporter = models.ForeignKey(Reporter)
+
+        def __unicode__(self):
+            return self.headline
+
+        class Meta:
+            ordering = ('headline',)
+
+Estos ejemplos que siguen son  operaciones que se pueden realizar usando la API interactiva que nos facilita python.
+
+Creamos algunos reporteros::
+
+    >>> r = Reporter(first_name='John', last_name='Smith', email='john@example.com')
+    >>> r.save()
+
+    >>> r2 = Reporter(first_name='Paul', last_name='Jones', email='paul@example.com')
+    >>> r2.save()
+
+Creamos un artículo::
+
+    >>> from datetime import datetime
+    >>> a = Article(id=None, headline="This is a test", pub_date=datetime(2005, 7, 27), reporter=r)
+    >>> a.save()
+
+    >>> a.reporter.id
+    1
+
+    >>> a.reporter
+    <Reporter: John Smith>
+
+Los objetos artículo tienen acceso a sus objetos relacionados reportero::
+
+    >>> r = a.reporter
+
+Éstas son cadenas en vez de las cadenas  unicode, porque eso es lo que  fue
+utilizada dentro la creación de este reportero (y nosotros no hemos refrescado
+los datos de la base de datos, por lo que nos devuelve siempre las cadenas unicode)::
+
+    >>> r.first_name, r.last_name
+    ('John', 'Smith')
+
+Creamos un artículo vía el objeto  reportero::
+
+    >>> new_article = r.article_set.create(headline="John's second story", pub_date=datetime(2005, 7, 29))
+    >>> new_article
+    <Article: John's second story>
+    >>> new_article.reporter
+    <Reporter: John Smith>
+    >>> new_article.reporter.id
+    1
+
+Creamos un nuevo artículo y lo  agregamos  al artículo anterior::
+
+    >>> new_article2 = Article(headline="Paul's story", pub_date=datetime(2006, 1, 17))
+    >>> r.article_set.add(new_article2)
+    >>> new_article2.reporter
+    <Reporter: John Smith>
+    >>> new_article2.reporter.id
+    1
+    >>> r.article_set.all()
+    [<Article: John's second story>, <Article: Paul's story>, <Article: This is a test>]
+
+Agregamos el mismo artículo a un diferente artículo  - comprobamos que se mueve -::
+
+    >>> r2.article_set.add(new_article2)
+    >>> new_article2.reporter.id
+    2
+    >>> new_article2.reporter
+    <Reporter: Paul Jones>
+
+Si agregamos un objeto del tipo incorrecto django levanta una excepción del tipo  TypeError::
+
+    >>> r.article_set.add(r2)
+    Traceback (most recent call last):
+    ...
+    TypeError: 'Article' instance expected
+
+    >>> r.article_set.all()
+    [<Article: John's second story>, <Article: This is a test>]
+    >>> r2.article_set.all()
+    [<Article: Paul's story>]
+
+    >>> r.article_set.count()
+    2
+
+    >>> r2.article_set.count()
+    1
+
+
+Observamos que en el ejemplo anterior el artículo se ha movido desde John a Paul.
+El manejador de relaciones soporta las operaciones de búsqueda también en el campo.
+El API sigue automáticamente las relaciones por lo que no se  necesita,
+utilizar los guiones bajos para separar las relaciones.Esto trabaja tan
+profundamente en tantos niveles como queramos. No hay límite. Por ejemplo::
+
+    >>> r.article_set.filter(headline__startswith='This')
+    [<Article: This is a test>]
+
+    # Find all Articles for any Reporter whose first name is "John".
+    >>> Article.objects.filter(reporter__first_name__exact='John')
+    [<Article: John's second story>, <Article: This is a test>]
+
+El mismo caso esta implicado aqui::
+
+    >>> Article.objects.filter(reporter__first_name='John')
+    [<Article: John's second story>, <Article: This is a test>]
+
+Podemos hacer un query  dos veces sobre el campo relacionado.
+Trasladamos la condición AND  y la  clausula WHERE::
+
+    >>> Article.objects.filter(reporter__first_name__exact='John', reporter__last_name__exact='Smith')
+    [<Article: John's second story>, <Article: This is a test>]
+
+Para las operaciones de relaciones y búsqueda podemos suministrar
+un valor primario o pasar el objeto  relacionado  explícitamente::
+
+    >>> Article.objects.filter(reporter__pk=1)
+    [<Article: John's second story>, <Article: This is a test>]
+    >>> Article.objects.filter(reporter=1)
+    [<Article: John's second story>, <Article: This is a test>]
+    >>> Article.objects.filter(reporter=r)
+    [<Article: John's second story>, <Article: This is a test>]
+
+    >>> Article.objects.filter(reporter__in=[1,2]).distinct()
+    [<Article: John's second story>, <Article: Paul's story>, <Article: This is a test>]
+    >>> Article.objects.filter(reporter__in=[r,r2]).distinct()
+    [<Article: John's second story>, <Article: Paul's story>, <Article: This is a test>]
+
+Podemos utilizar un queryset en vez de una lista literal de instancias::
+
+    >>> Article.objects.filter(reporter__in=Reporter.objects.filter(first_name='John')).distinct()
+    [<Article: John's second story>, <Article: This is a test>]
+
+Podemos hacer una consulta en la dirección opuesta::
+
+    >>> Reporter.objects.filter(article__pk=1)
+    [<Reporter: John Smith>]
+    >>> Reporter.objects.filter(article=1)
+    [<Reporter: John Smith>]
+    >>> Reporter.objects.filter(article=a)
+    [<Reporter: John Smith>]
+
+    >>> Reporter.objects.filter(article__headline__startswith='This')
+    [<Reporter: John Smith>, <Reporter: John Smith>, <Reporter: John Smith>]
+    >>> Reporter.objects.filter(article__headline__startswith='This').distinct()
+    [<Reporter: John Smith>]
+
+El método Counting trabaja en  la dirección opuesta conjuntamente con el método distinct()::
+
+    >>> Reporter.objects.filter(article__headline__startswith='This').count()
+    3
+    >>> Reporter.objects.filter(article__headline__startswith='This').distinct().count()
+    1
+
+Los Queries pueden trabajar en  círculos::
+
+    >>> Reporter.objects.filter (article__reporter__first_name__startswith='John')
+    [<Reporter: Juan Smith>, <Reporter: Juan Smith>, <Reporter: Juan Smith>, <Reporter: >>> Reporter.objects.filter (article__reporter__first_name__startswith='John').distinct de Juan Smith>] ()
+    [<Reporter: Juan Smith>]
+    >>> Reporter.objects.filter (article__reporter__exact=r).distinct ()
+    [<Reporter: Juan Smith>]
+
+Si borramos un reportero, sus artículos serán borrados (asumiendo que el campo
+ForeignKey fue definido con el atributo
+:attr:`django.db.models.ForeignKey.on_delete` lo seteamos a
+``CASCADE`, que es el que usa por  defecto)::
+
+    >>> Article.objects.all()
+    [<Article: John's second story>, <Article: Paul's story>, <Article: This is a test>]
+    >>> Reporter.objects.order_by('first_name')
+    [<Reporter: John Smith>, <Reporter: Paul Jones>]
+    >>> r2.delete()
+    >>> Article.objects.all()
+    [<Article: John's second story>, <Article: This is a test>]
+    >>> Reporter.objects.order_by('first_name')
+    [<Reporter: John Smith>]
+
+Podemos borrar usando JOIN  en un query::
+
+    >>> Reporter.objects.filter(article__headline__startswith='This').delete()
+    >>> Reporter.objects.all()
+    []
+    >>> Article.objects.all()
+    []
+

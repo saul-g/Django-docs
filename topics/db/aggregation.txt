@@ -1,0 +1,424 @@
+===========
+Agregación
+===========
+
+.. currentmodule :: django.db.models
+
+La guía de temas sobre :doc:`Django's database-abstraction API </topics/db/queries>`
+describe las formas en que podemos usar las consultas en  Django para crear,
+recuperar, actualizar y eliminar objetos individualmente.
+Sin embargo, a veces se tiene la necesidad de obtener valores derivados de una
+suma o una *agregacion* de  una colección de objetos. Esta guía temática describe las
+maneras en que los valores agregados se pueden generar y devolver usando
+consultas o querys en Django.
+
+A lo largo de esta guía, nos referiremos a los siguientes modelos. Estos modelos son
+utilizados  para realizar el seguimiento del inventario de una serie de librerías en línea:
+
+.. _queryset-model-example:
+
+.. code-block:: python
+
+    class Author(models.Model):
+       name = models.CharField(max_length=100)
+       age = models.IntegerField()
+       friends = models.ManyToManyField('self', blank=True)
+
+    class Publisher(models.Model):
+       name = models.CharField(max_length=300)
+       num_awards = models.IntegerField()
+
+    class Book(models.Model):
+       isbn = models.CharField(max_length=9)
+       name = models.CharField(max_length=300)
+       pages = models.IntegerField()
+       price = models.DecimalField(max_digits=10, decimal_places=2)
+       rating = models.FloatField()
+       authors = models.ManyToManyField(Author)
+       publisher = models.ForeignKey(Publisher)
+       pubdate = models.DateField()
+
+    class Store(models.Model):
+       name = models.CharField(max_length=300)
+       books = models.ManyToManyField(Book)
+
+Cheat Sheet
+===========
+
+¿En una apuracion? Esta es la forma mas común de hacer consultas de agregados,
+asumiendo los modelos arriba mencionados:
+
+.. code-block:: python
+
+    # Numero total de libros.
+    >>> Book.objects.count()
+    2452
+
+    # El numero total de libros con un publisher=BaloneyPress
+    >>> Book.objects.filter(publisher__name='BaloneyPress').count()
+    73
+
+    # Precio medio de los libros.
+    >>> from django.db.models import Avg
+    >>> Book.objects.all().aggregate(Avg('price'))
+    {'price__avg': 34.35}
+
+    # Maximo precio de todos los libros.
+    >>> from django.db.models import Max
+    >>> Book.objects.all().aggregate(Max('price'))
+    {'price__max': Decimal('81.20')}
+
+    # Cada publisher, con un contador de libros con un atributo "num_books".
+    >>> from django.db.models import Count
+    >>> pubs = Publisher.objects.annotate(num_books=Count('book'))
+    >>> pubs
+    [<Publisher BaloneyPress>, <Publisher SalamiPress>, ...]
+    >>> pubs[0].num_books
+    73
+
+    # El top 5 de publishers, en orden de numero de libros.
+    >>> from django.db.models import Count
+    >>> pubs = Publisher.objects.annotate(num_books=Count('book')).order_by('-num_books')[:5]
+    >>> pubs[0].num_books
+    1323
+
+Agregados que generan más de un QuerySet
+=========================================
+
+Django proporciona dos maneras de generar agregados. La primera manera es generar
+los valores sumarios sobre un ``QuerySet`` entero. Por ejemplo, digamos que queremos
+calcular el precio medio de todos los libros disponibles para la venta. Los querys
+en Django proporcionan una sintaxis para describir el conjunto de todos los libros::
+
+    >>> Book.objects.all()
+
+Lo que necesitamos es una manera de calcular la suma del valor de  los objetos que
+pertenecen a este ``QuerySet``. Esto lo hacemos añadiendo una clausula  ``aggregate()``
+a  el ``QuerySet`` de esta forma::
+
+    >>> from django.db.models import Avg
+    >>> Book.objects.all().aggregate(Avg('price'))
+    {'price__avg': 34.35}
+
+
+El metodo ``all()`` es redundante en este ejemplo, por lo se podría simplificar a::
+
+    >>> Book.objects.aggregate(Avg('price'))
+    {'price__avg': 34.35}
+
+El argumento para la  cláusula  ``aggregate()``  describe el valor agregado que
+queremos calcular - en este caso, el promedio de los campos ``price``  en el
+modelo ``Book`` - . Una lista de las funciones agregadas  está disponibles en la
+:ref:`QuerySet reference <aggregation-functions>`.
+
+``aggregate()``  es una cláusula terminal para un ``QuerySet`` que, cuando se invoca,
+devuelve un diccionario de pares de nombre-valor. El nombre es un identificador para el
+valor agregado, el valor es la suma calculada. El nombre es
+generado automáticamente a partir del nombre del campo y la función de agregado.
+Si se  desea especificar manualmente un nombre para el valor agregado, puede hacerce
+proporcionando ese nombre cuando se especifica la cláusula agregada::
+
+    >>> Book.objects.aggregate(average_price=Avg('price'))
+    {'average_price': 34.35}
+
+Si se desea generar más de un agregado, solo devemos agregar  otro
+argumento ala cláusula ``aggregate()``. Por lo tanto, si también queremos saber
+el precio máximo y mínimo de todos los libros, podríamos emitir la consulta asi::
+
+    >>> from django.db.models import Avg, Max, Min, Count
+    >>> Book.objects.aggregate(Avg('price'), Max('price'), Min('price'))
+    {'price__avg': 34.35, 'price__max': Decimal('81.20'), 'price__min': Decimal('12.99')}
+
+Generación de agregados para cada elemento de un QuerySet
+=========================================================
+
+La segunda manera de generar sumas de valores es el de generar sumas independientes
+de  cada objeto en un ``QuerySet``. Por ejemplo, si vamos a recuperar
+una lista de libros, podriamos querer saber cuántos autores contribuyeron a
+cada libro. Cada libro tiene una relación de muchos a muchos con el autor, si
+queremos resumir esta relación para cada libro del ``QuerySet``
+
+La suma de pre-objetos se pueden generar utilizando la cláusula ``annotate()``.
+Cuando una cláusula ``annotate()``  se especifica, cada objeto del ``QuerySet``
+será anotada con los valores especificados.
+
+La sintaxis de estas anotaciones es idéntica a la utilizada por la
+cláusula ``aggregate()`` . Cada argumento a ``annotate()`` describe un
+agregado que sera  calculado. Por ejemplo, para anotar los libros por
+el número de autores podemos usar:
+
+.. code-block:: python
+
+    # construye un queryset anotado
+    >>> q = Book.objects.annotate(Count('authors'))
+    # preguntamos por el primer objeto del  queryset
+    >>> q[0]
+    <Book: The Definitive Guide to Django>
+    >>> q[0].authors__count
+    2
+    # preguntamos por el segundo objeto del  queryset
+    >>> q[1]
+    <Book: Practical Django Projects>
+    >>> q[1].authors__count
+    1
+
+Al igual que con ``aggregate()``, el nombre de la anotación se deriva automáticamente
+a partir del nombre de la función de agregado y el nombre del campo que se
+ha agregado. Se puede sustituir este nombre por defecto al proporcionar un alias cuando
+se especifique la anotación:
+
+.. code-block:: python
+
+    >>> q = Book.objects.annotate(num_authors=Count('authors'))
+    >>> q[0].num_authors
+    2
+    >>> q[1].num_authors
+    1
+
+Tal como ``aggregate()``, ``annotate()``  *no* es una cláusula terminal. La salida
+de la cláusula ``annotate()`` es un ``QuerySet``; este ``QuerySet``  puede ser
+modificado como cualquier otro ``QuerySet`` con operaciones, incluyendo ``filter()``,
+``order_by``, o incluso con llamadas adicionales a ``annotate()``.
+
+Juntar y Agregar
+================
+
+Hasta ahora, nos hemos ocupado de los agregados sobre los campos que pertenecen a los
+modelos que se está consultando. Sin embargo, a veces el valor que se desea agregar
+pertenecerá a un modelo que tiene que ver con el modelo que se está consultando.
+
+Al especificar el campo para ser agregados en una función de agregado, Django
+nos permitirá utilizar la mismo :ref:`double underscore notation
+<field-lookups-intro>` (doble guion bajo) que utiliza para referirse a los campos relacionados en
+filtros. Django manejara las uniones de las tablas que son requeridas y agregara el
+valor reacionado.
+
+Por ejemplo, para encontrar el rango de precios de los libros que se ofrecen en cada tienda,
+se puede utilizar la anotación::
+
+        >>> Store.objects.annotate(min_price=Min('books__price'), max_price=Max('books__price'))
+
+Esto le indica a Django que recupere el modelo Store, junto (a través de la relacion
+muchos-a-muchos) con el modelo book, y agregue  el
+precio de campo del modelo de libro para producir un valor mínimo y máximo.
+
+Las mismas reglas se aplican a cláusula ``aggregate()``. Si quisieramos
+saber el precio más bajo y más alto de todos los libros que están disponibles para la venta
+en la tienda(Store), podríamos utilizar el ``aggregate()`` siguiente::
+
+        >>> Store.objects.aggregate(min_price=Min('books__price'), max_price=Max('books__price'))
+
+Juntar cadenas pueden ser tan profundo como sea necesario. Por ejemplo, para extraer la
+edad de la autora más joven de todos los libros disponibles para la venta, se podría
+emitir la consulta::
+
+        >>> Store.objects.aggregate(youngest_age=Min('books__authors__age'))
+
+Agregaciones y otras cláusulas de un QuerySet
+=============================================
+
+``filter()`` y ``exclude()``
+----------------------------
+
+Los agregados también pueden participar en filtros. Cualquier ``filter()`` (o
+``exclude()``)  aplicado a los campos normales del modelo tendrá el efecto de
+restringir los objetos que se consideran para la agregación.
+
+Cuando se utilizan con un  cláusula  ``annotate()``, un filtro tiene el efecto de
+restringir los objetos para los que se calcula una anotación. Por ejemplo,
+se puede generar una lista anotada de todos los libros que tienen un título que empieza
+con "Django" utilizando la consulta::
+
+       >>> Book.objects.filter(name__startswith="Django").annotate(num_authors=Count('authors'))
+
+Cuando se utiliza con una cláusula ``aggregate()``, un filtro tiene un efecto
+limitador de objetos sobre los cuales se calcula el agregado.
+Por ejemplo, se puede generar el precio medio de todos los libros con un
+título que comience con "Django" utilizando la consulta::
+
+         >>> Book.objects.filter(name__startswith="Django").aggregate(Avg('price'))
+
+Filtros o anotaciones
+~~~~~~~~~~~~~~~~~~~~~
+
+Los valores anotados también se puede filtrar. Los alias de la anotación puede ser
+utilizados en  clausulas ``filter()`` y ``exclude()`` de la misma manera que cualquier otro
+modelo de campo.
+
+Por ejemplo, para generar una lista de libros que tienen más de un autor,
+podemos ejecutar la siguiente consulta::
+
+       >>> Book.objects.annotate(num_authors=Count('authors')).filter(num_authors__gt=1)
+
+Esta consulta genera un conjunto de resultados anotados, a continuación, genera un filtro
+basado en que la anotación.
+
+Ordenar clausulas ``annotate()`` y ``filter()``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Cuando se desarrolla una consulta compleja que involucra tanto una cláusula
+``annotate()`` si como una ``filter()``, se debe prestar especial atención al orden
+en el que se aplican las cláusulas del ``QuerySet``.
+
+Cuando un cláusula ``annotate()`` es aplicada a una consulta, la anotación es
+calculada sobre el estado de la consulta hasta el punto en que la anotación
+se solicita. La implicación práctica de esto es que ``filter()`` y
+``annotate()``  no son operaciones conmutativas - es decir, hay una
+diferencia entre la consulta -::
+
+        >>> Publisher.objects.annotate(num_books=Count('book')).filter(book__rating__gt=3.0)
+
+y la consulta::
+
+        >>> Publisher.objects.filter(book__rating__gt=3.0).annotate(num_books=Count('book'))
+
+Ambas consultas devolverá una lista de editores que tienen por lo menos un buen
+libro (es decir, un libro con una calificación superior a 3.0). Sin embargo, la anotación en
+la primera consulta proporcionará el número total de todos los libros publicados por la
+editorial, la segunda consulta incluirá solamente los buenos libros en el contador de
+la anotación. En la primera consulta, la anotación precede al filtro, por lo que el
+filtro no tiene efecto en la anotación. En la segunda consulta, el filtro
+precede a la anotación, y como resultado, el filtro restringe los objetos
+considerados cuando se hace la anotación.
+
+``order_by()``
+--------------
+
+Las anotaciones se pueden utilizar basicamenente para ordenar. Cuando se
+define una clausula ``order_by ()``, los agregados suministrados pueden hacer referencia a
+cualquier alias definido como parte de una  cláusula ``annotate()`` en la consulta.
+
+Por ejemplo, para ordenar un ``QuerySet`` de libros por el número de autores
+que han colaborado en el libro, se puede utilizar la siguiente consulta::
+
+        >>> Book.objects.annotate(num_authors=Count('authors')).order_by('num_authors')
+
+``values()``
+------------
+
+Por lo general, las anotaciones se generan en función de cada objeto - una anotacion
+``QuerySet`` devolverá un resultado para cada objeto en el original ``QuerySet`` -.
+Sin embargo, cuando una cláusula ``values()`` es utilizada para restringir las
+columnas que se devuelven en el conjunto de resultados, el método de evaluación de
+anotaciones es ligeramente diferente. En lugar de devolver un resultado anotado
+para cada resultado en el ``QuerySet``, los resultados originales son
+agrupados de acuerdo con las combinaciones particulares de los campos especificados en la
+cláusula ``values()``. Una anotación se proporciona entonces para cada grupo único;
+la anotación se calcula sobre todos los miembros del grupo.
+
+Por ejemplo, consideremos una consulta de un autor que intenta averiguar el promedio
+de valoración de los libros escritos por cada autor::
+
+        >>> Author.objects.annotate(average_rating=Avg('book__rating'))
+
+Esto devolverá un resultado por cada autor en la base de datos, con la anotación,
+y su clasificación promedio  contable.
+
+Sin embargo, el resultado será un poco diferente si se utiliza un cláusula ``values()``::
+
+        >>> Author.objects.values('name').annotate(average_rating=Avg('book__rating'))
+
+En este ejemplo, los autores se agruparán por su nombre, por lo que se obtendrá sólo
+un resultado anotado para cada un  *Nombre único autor*. Esto significa que tenemos
+Dos autores con el mismo nombre, los resultados se fusionarán en una sola
+salida de  consulta; el promedio se calcula como el
+promedio de los libros escritos por ambos autores.
+
+El order de  clusulas ``annotate()`` y ``values()``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Al igual que con la  cláusula ``filter()``,  el orden en el cual las clausulas``annotate()`` y
+``values()`` se aplican a una consulta es significativo. Si la cláusula
+``values()`` precede ala clausula ``annotate()``, la anotación será
+calculada utilizando la agrupación descrita por la  cláusula ``values()``.
+
+Sin embargo, si la cláusula ``annotate()`` precede a la cláusula ``values()``,
+las anotaciones se genera sobre el conjunto completo de la consulta. En este caso,
+la cláusula ``values()`` sólo limita los campos que se generan en
+la salida.
+
+Por ejemplo, si invertimos el orden de los valores de las clausulas ``values()`` y ``annotate()``
+de nuestro ejemplo anterior::
+
+       >>> Author.objects.annotate(average_rating=Avg('book__rating')).values('name', 'average_rating')
+
+Esto ahora producira un resultado único para cada autor, sin embargo, sólo
+el nombre del autor y la anotación ``average_rating`` será devuelto
+en los datos de salida.
+
+También debemos  tener en cuenta que ``average_rating`` se ha incluido explícitamente
+en la lista de valores que se devuelven. Esto es necesario debido a la
+orden de los valores de las  cláusulas ``values()`` y ``annotate()``.
+
+Si la cláusula ``values()`` precede ala  cláusula ``annotate()``, las anotaciones
+se añaden automáticamente a la hoja de resultados. Sin embargo, si la
+cláusula ``values()``  se aplica después de la cláusula ``annotate()``, se debe explícitamente
+incluir la columna agregada.
+
+Interacción con un orden predeterminado o ``order_by()``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Los campos que se mencionan en el metodo ``order_by()`` por  parte de un queryset (o que
+se utilizan en el orden predeterminado de un modelo) se usan cuando se selecciona los
+datos de salida, incluso si no se especifique otra cosa en la llamada a ``values()``.
+Estos campos adicionales se utilizan para agrupar y juntar resultados "similares" entre sí y
+que pueden tener otros resultados en filas idénticas, pero de un modo separado.
+Esto se manifiesta, en particular, al contar  cosas.
+
+A modo de ejemplo, supongamos que se tiene un modelo como este:
+
+.. code-block:: python
+
+    class Item(models.Model):
+        name = models.CharField(max_length=10)
+        data = models.IntegerField()
+
+        class Meta:
+            ordering = ["name"]
+
+La parte importante aquí es el orden predeterminado en  el campo ``name``. Si
+deseamos contar cuántas veces cada valor ``data``  distinto aparece, es posible que
+intentemos esto::
+
+        # Advertencia: No del todo correcto!
+        Item.objects.values("data").annotate(Count("id"))
+
+... Que agrupará los objetos  ``Item`` por su valor común  ``data``  y
+luego contara el número de valores ``id``  en cada grupo. Sólo que no terminara
+de funcionar. El valor por defecto ``name``  también jugará un papel importante en la
+agrupación, por lo que si queremos una consulta de grupos de pares de distintos ``(data, name)`` , que
+no es lo que queremos. En su lugar, devemos construir este queryset::
+
+        Item.objects.values("data").annotate(Count("id")).order_by()
+
+...limpiamos y ordenamos  la consulta. También podriamos ordenar, por decir, ``date``
+sin ningún efecto perjudicial, puesto que ya está jugando un papel en la
+consulta.
+
+Este comportamiento es el mismo que se indica en la documentación para el
+:meth:`~django.db.models.query.QuerySet.distinct` y la regla general es la
+misma: normalmente no querremos columnas extra  que juegan un papel importante
+en el resultado, por lo que limpiar el orden, o al menos asegurarse de que se está
+restringiendo  al menos esos campos que tambien son seleccionados en la llamada a ``values()``.
+
+.. note::
+        Es razonable preguntar por qué Django no elimina las columnas extrañas por
+        nosotros. La razón principal es por mantener la coherencia con ``distinc ()`` y otros
+        lugares: Django **nunca** eliminara el orden de retriccion que hayamos especificado
+        (y no podemos cambiar el comportamiento de los otros métodos,
+        ya que esto  violaría nuestro: :doc:`/misc/api-stability` policy).
+
+Agregación de anotaciones
+--------------------------
+
+También se puede generar un agregado en el resultado de una anotación. Cuando
+definimos una clausula ``aggregate()``, los agregados suministrados pueden hacer referencia a
+cualquier alias definido como parte de una cláusula ``annotate()``  de la consulta.
+
+Por ejemplo, si desea calcular el número promedio de autores por el conjunto de
+libros con el recuento autor, entonces el agregado que cuenta el  autor,
+haciendo referencia al campo de anotaciones::
+
+    >>> Book.objects.annotate(num_authors=Count('authors')).aggregate(Avg('num_authors'))
+    {'num_authors__avg': 1.66}
+

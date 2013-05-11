@@ -1,0 +1,23 @@
+Modelos y bases de datos
+========================
+
+.. module:: django.db
+
+Un modelo es la fuente única y definitiva de datos acerca de sus datos. contiene
+los campos imprescindibles y comportamientos de los datos que se están almacenando.
+Generalmente, cada mapas de modelo a una tabla de base de datos única.
+
+.. toctree::
+   :maxdepth: 1
+
+   models
+   queries
+   aggregation
+   managers
+   sql
+   transactions
+   multi-db
+   tablespaces
+   optimization
+   examples/index
+

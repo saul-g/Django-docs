@@ -1,0 +1,11 @@
+==================================================
+Ejemplos del uso de la API en relaciones de modelos
+==================================================
+
+.. toctree::
+   :maxdepth: 1
+
+   many_to_many
+   many_to_one
+   one_to_one
+

@@ -1,0 +1,396 @@
+========
+Managers
+========
+
+.. currentmodule:: django.db.models
+
+.. class:: Manager()
+
+Un ``Manager`` es la interfaz a través de la cual se realizan las operaciones de consulta
+a la base de datos son proporcionados a los modelos de Django. Por lo menos deve de existir un
+``Manager`` para todos los modelos de una aplicación de Django.
+
+La forma  en que  las clases ``Manager`` funcionan se documenta en :doc:`/topics/db/queries`;
+este documento específicamenete se refiere a las opciones de un modelo para personalizar
+el comportamiento de un ``Manager``.
+
+.. _manager-names:
+
+Nombres del Manager
+===================
+
+Por defecto, Django agrega un ``Manager`` con el nombre de ``objects`` para cada clase de un
+modelo Django. Sin embargo, si deseamos utilizar ``objects``  como un nombre de campo, o si
+deseamos usar un nombre que no sea ``objects`` para el  ``Manager``, se puede cambiar el nombre
+sobre la base del modelo. Para renombrar una clase dada para un ``Manager`` , definimos una
+clase de atributos del tipo ``models.Manager()`` en el modelo. Por ejemplo ::
+
+    from django.db import models
+
+    class Person(models.Model):
+        #...
+        people = models.Manager()
+
+Usando este modelo de ejemplo  ``Person.objects``, generara una exepcion del tipo ``AttributeError``,
+pero ``Person.people.all()`` nos  proporcionará una lista de todos los objetos ``Person``.
+
+.. _custom-managers:
+
+Personalizar Managers
+======================
+
+Podemos utilizar un ``Manager`` personalizado en un modelo en particular mediante la ampliación
+de la clase base ``Manager`` e instanciando el ``Manager`` personalizado con  el modelo.
+
+Hay dos razones por las que tal vez quieras  personalizar un ``Manager``: Para agregar metodos extra
+al ``Manager`` y / o para modificar el ``QuerySet`` inicial  que retorna el ``Manager``.
+
+Agregando metodos extra a un Manager
+------------------------------------
+
+Agregar metodos extra a un  ``Manager``  es la mejor forma de añadir funcionaliad "a nivel de tabla"
+a un modelo. (Para funcionalidad a "nivel de filas" - es decir, las funciones
+que actúan sobre una sola instancia de un objeto de modelo -- es mejor usar :ref:`Model methods
+<model-methods>` , que metodos no personalizados de un ``Manager``)
+
+Un metodo pesonalizado en un  ``Manager`` puede devolver lo que quieras. No tiene por qué
+devolver un``QuerySet``.
+
+Por ejemplo, este metodo personalizado en un  ``Manager`` dispone de un método ``with_counts ()``, que
+devuelve una lista de todos los objetos ``OpinionPoll``, cada uno con un atributo extra
+``num_responses`` que es el resultado de una consulta adicional ::
+
+    class PollManager(models.Manager):
+        def with_counts(self):
+            from django.db import connection
+            cursor = connection.cursor()
+            cursor.execute("""
+                SELECT p.id, p.question, p.poll_date, COUNT(*)
+                FROM polls_opinionpoll p, polls_response r
+                WHERE p.id = r.poll_id
+                GROUP BY 1, 2, 3
+                ORDER BY 3 DESC""")
+            result_list = []
+            for row in cursor.fetchall():
+                p = self.model(id=row[0], question=row[1], poll_date=row[2])
+                p.num_responses = row[3]
+                result_list.append(p)
+            return result_list
+
+    class OpinionPoll(models.Model):
+        question = models.CharField(max_length=200)
+        poll_date = models.DateField()
+        objects = PollManager()
+
+    class Response(models.Model):
+        poll = models.ForeignKey(Poll)
+        person_name = models.CharField(max_length=50)
+        response = models.TextField()
+
+Con este ejemplo, tendremos que utilizar ``OpinionPoll.objects.with_counts()`` para retornar
+la lista de objetos ``OpinionPoll`` con los atributos ``num_responses``.
+
+Otra cosa a destacar en este ejemplo es que el metodo ``Manager`` puede tener
+acceso mediante ``self.model`` ala clase del modelo al que está unido.
+
+Modificando consultas iniciales con Managers
+---------------------------------------------
+
+Una consulta a un  ``Manager``'s base  devuelve todos los objetos de el sistema. Por
+ejemplo, utilizando este modelo ::
+
+    class Book(models.Model):
+        title = models.CharField(max_length=100)
+        author = models.CharField(max_length=50)
+
+...La declaracion ``Book.objects.all()`` retornara todos los libros de la base datos.
+
+Se puede reemplazar un ``Manager``\'s base ``QuerySet`` sobreescribiendo el
+método ``Manager.get_query_set()``.``get_query_set()`` debe retornar un
+``QuerySet`` con las propiedades que se requieran.
+
+Por ejemplo, el siguiente modelo tiene *dos* ``Manager``\s - uno que devuelve
+todos los objetos y uno que sólo devuelve los libros de Roald Dahl. - ::
+
+    #Primero, definimos la subclase Manager.
+    class DahlBookManager(models.Manager):
+        def get_query_set(self):
+            return super(DahlBookManager, self).get_query_set().filter(author='Roald Dahl')
+
+    # A continucion conectamos de forma explicita el modelo libro.
+    class Book(models.Model):
+        title = models.CharField(max_length=100)
+        author = models.CharField(max_length=50)
+
+        objects = models.Manager() # El manager por default .
+        dahl_objects = DahlBookManager() # El manager especifico.
+
+
+Con este modelo de ejemplo, ``Book.objects.all ()`` retornará todos los libros en la
+base de datos, pero ``Book.dahl_objects.all ()`` sólo devolverá los escritos por
+Roald Dahl.
+
+Por supuesto, porque ``get_query_set()`` solo devuelve un objeto ``QuerySet``, se puede
+usar el metodo ``filter ()``, ``exclude ()`` y todos los otros métodos de los  ``QuerySet``
+en él. Así pues, estas declaraciones son todos legales ::
+
+    Book.dahl_objects.all()
+    Book.dahl_objects.filter(title='Matilda')
+    Book.dahl_objects.count()
+
+En este ejemplo también se señaló otra técnica interesante: el uso de múltiples
+managers  en el mismo modelo. Se pueden adjuntar tantos ``Manager ()`` e instancias a
+un modelo como se desee. Esta es una manera fácil de definir  "filtros" comunes para los
+modelos.
+
+Por ejemplo ::
+
+    class MaleManager(models.Manager):
+        def get_query_set(self):
+            return super(MaleManager, self).get_query_set().filter(sex='M')
+
+    class FemaleManager(models.Manager):
+        def get_query_set(self):
+            return super(FemaleManager, self).get_query_set().filter(sex='F')
+
+    class Person(models.Model):
+        first_name = models.CharField(max_length=50)
+        last_name = models.CharField(max_length=50)
+        sex = models.CharField(max_length=1, choices=(('M', 'Male'), ('F', 'Female')))
+        people = models.Manager()
+        men = MaleManager()
+        women = FemaleManager()
+
+Este ejemplo nos permite solicitar ``Person.men.all()``, ``Person.women.all()``,
+y ``Person.people.all()`` con resultados predecibles.
+
+Si utilizamos  personalizados objetos en un ``Manager``, devemos de tener en cuenta
+que el primer ``Manager`` que Django encuentra (en el orden en que están definidos en el modelo)
+tiene un estatus especial. Django interpreta que el primer ``Manager`` definido en una clase sera
+el ``Manager`` por "default", y varias partes de Django (Incluyendo :djadmin:`dumpdata`) usará ese
+``Manager`` exclusivamente para ese modelo. Como resultado de ello, es una buena idea tener cuidado con
+las opciónes del manager por defecto a fin de evitar una situación, como la de sobrescribir
+el metodo ``get_query_set()`` y pueda resultar en una incapacidad para recuperar
+los objetos con los que nos gustaría trabajar.
+
+.. _managers-for-related-objects:
+
+Usando managers para acceder a relaciones de objetos
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Por defecto, los managers en Django utiliza una instancia de una clase "normal" cuando se accede a
+sus objetos relacionados (por ejemplo ``choice.poll`` ), no el manager por default en la
+relacion del objeto. Esto es porque Django necesita ser capaz de recuperar la relacion del
+objeto, incluso si se filtrara de otra manera (y por lo tanto sera inaccesible)
+por el manager por defecto.
+
+Si el manager en una clase normal (:class:`django.db.models.Manager`) no es
+apropiado para sus circunstancias, podemos forzar a Django a que use la misma clase
+como el manager por defecto para el modelo estableciendo la configuracion del atributo
+`use_for_related_fields` en la clase manager. Esto está documentado por completo below_.
+
+.. _below: manager-types_
+
+.. _custom-managers-and-inheritance:
+
+Manager personalizados  y modelo de herencia
+--------------------------------------------
+
+La herencia de clases y los managers de un  modelo no son un complemento perfecto
+uno para el otro. Los managers son a menudo específicados en las clases que se definen en
+la herencia, en las subclases no es esta necesariamente una buena idea. También, debido a que el
+primer manager declarado es el valor por defecto del *manager* , es importante permitir que
+sea controlado. Así que aquí está cómo Django maneja los managers personalizados y
+:ref:`model inheritance <model-inheritance>`:
+
+1. Los managers definidos en las clases base no abstractas *no* son heredados por las
+   clases hijas. Si se desea volver a utilizar un ``Manager`` de una clase base no abstracta,
+   necesitamos volver a declararlo explícitamente en la clase hija. Este tipo de directivas
+   son  probablemenete bastante específicas en cuanto a la clase en que se defina,  por lo tanto
+   heredarlos a menudo puede conducir a resultados inesperados (particularmente,
+   con el  manager que lo hace por defecto). Por lo tanto, no son pasadas a las
+   clases hijas.
+
+2. Los managers de las clases base abstractas son siempre heredados por la clase hija,
+   utilizando el orden de resolución de nombres normales de Python (los nombres en las
+   clases hijo anulan todos los demás y luego los nombres de la clase del primer padre,
+   y así sucesivamente). Las clases abstractas base está diseñadas para capturar la información
+   y el comportamiento que es común a las clases de sus hijos. Definir managers comúnes
+   es una parte apropiada de esta información común.
+
+3. El ``Manager`` por default de una clase es cualquiera de los primeros  managers que
+   se declaró por primera vez en una  la clase, si es que existe, o el ``Manager`` por defecto
+   del la primera clase base de la jerarquía de los padres, si es que existe. Si no es
+   declarado explicitamente ningun manager por defecto, Se usara el manager por defecto de Django.
+
+Estas reglas proporcionan la flexibilidad necesaria si deseamos instalar una
+colección de  ``Manager`` peersonalizados  en un grupo de modelos, a través de una clase base abstracta,
+pero aún así personalizar el manager por defecto. Por ejemplo, supongamos que tenemos
+esta clase base ::
+
+    class AbstractBase(models.Model):
+        ...
+        objects = CustomManager()
+
+        class Meta:
+            abstract = True
+
+Si utilizamos directamente  una subclase, ``objects`` será el manager por default
+si no declarar los managers en la clase base ::
+
+    class ChildA(AbstractBase):
+        ...
+        # En esta clase CustomManager es el manager por defecto.
+
+Si deseamos  heredar de ``AbstractBase``, pero proporcionamos un valor predeterminado diferente
+``Manager``, puede proporcionar el ``Manager`` predeterminado de la clase hija ::
+
+    class ChildB(AbstractBase):
+        ...
+        # Un manager por defecto explicito.
+        default_manager = OtherManager()
+
+Aquí, ``default_manager`` es el predeterminado. El manager ``objects`` aún está disponible,
+ya que es hereditario. Simplemente no se utiliza como valor predeterminado.
+
+Finalmente, para este ejemplo, supongamos  que deseamos  agregar un ``Manager`` adicional para la
+clase hijo, pero queremos seguir utilizando el valor por defecto de ``AbstracBase``. No se puede
+agregar el nuevo manager directamente en la clase hija, ya que anularía el manager por defecto y haría
+que también incluyese explícitamente todos los managers de la clase base abstracta.
+La solución es poner a los managers adicionales en otra clase base e introducirlo
+en la jerarquía de herencia *después* de los valores por defecto ::
+
+    class ExtraManager(models.Model):
+        extra_manager = OtherManager()
+
+        class Meta:
+            abstract = True
+
+    class ChildC(AbstractBase, ExtraManager):
+        ...
+        # El Default manager is CustomManager, but OtherManager is
+        # also available via the "extra_manager" attribute.
+
+
+Implementando problemas
+-----------------------
+
+Cualesquiera de las caracteristicas que quisieramos agregar a un ``Manager``
+personalizado, deben de ser posibles  haciendo  una copia superficial de
+una instancia  ``Manager``, es decir, el código en  el que se debe trabajar ::
+
+    >>> import copy
+    >>> manager = MyManager()
+    >>> my_copy = copy.copy(manager)
+
+Django hace copias superficiales de objetos del manager durante determinadas consultas;
+si el ``Manager`` no puede ser copiado, esas consultas  producirán un error.
+
+Esto no es un problema para la mayoría de los ``Manager`` personalizados. Si simplemente
+agregamos métodos a un ``Manager``, es poco probable que  inadvertidamente hará que las
+instancias de el ``Manager`` sean incopiables.
+Sin embargo, si  reemplazamos el metodo ``__getattr__``  o algún otro metodo privado
+de un objeto  ``Manager``  que controla el estado del objeto, se
+debe asegurarse de que no se afectan las  capacidad de el ``Manager`` al ser
+ser copiado.
+
+.. _manager-types:
+
+Control automático de los tipos de  ``Manager``
+===============================================
+
+Este documento ya ha mencionado un par de lugares donde Django crea una
+clase ``Manager`` por nosostros: `default managers`_   y el "plan"  del ``Manager``
+es poder usarse en `access related objects`_. Pero hay otros lugares en que
+se hace necesaria la  implementación de los ``Managers`` en Django. Algunos
+``Manager`` son creados automaticamente como instancias normales de la
+clase :class:`django.db.models.Manager`.
+
+.. _default managers: manager-names_
+.. _access related objects: managers-for-related-objects_
+
+En esta sección, vamos a utilizar el término "automatic manager" (gestor automático) en el sentido
+de un manager que Django crea para nosotros - ya sea como  un ``Manager`` por defecto en un modelo
+sin managers, o utilizando temporalmente cuando se accede a los objetos relacionados.
+
+A veces esta clase predeterminada no será la elección correcta. Un ejemplo es en la
+aplicacion :mod:`django.contrib.gis` que se incluye con Django en sí. Todos los modelos ``gis``
+deben usar una clase de ``Manager`` especial  (:class:`~django.contrib.gis.db.models.GeoManager`)
+porque necesitan un queryset especial (:class:`~django.contrib.gis.db.models.GeoQuerySet`)
+que se utilizará para interactuar con la base de datos. Resulta que los modelos que requieren
+un ``Manager`` especial como este necesitan usar la misma  clase  manager donde quiera que el
+sistema automáticamente crea los managers.
+
+Django proporciona una forma para que los desarrolladores de managers personalizados puedan decirle
+ala clase manager donde se deben utilizar los ``Manager`` de forma automática siempre que sea el manager
+por defecto en un modelo. Esto se hace estableciendo el atributo ``use_for_related_fiels`` en
+la clase Manager::
+
+    clase MyManager (models.Manager):
+        use_for_related_fields = True
+
+        ...
+
+Si este atributo se establece en el manager por *defecto* de un modelo (sólo el
+``Manager`` por defecto se considera en estas situaciones), Django usará esa clase
+cada vez que se necesita para crear automáticamente un manager para la clase. De lo contrario,
+utilizará la clase :class:`django.db.models.Manager`.
+
+.. admonition:: Nota Histórica
+
+    Teniendo en cuenta la finalidad para la que se utiliza, el nombre de el atributo
+    (``use_for_related_fields``)puede parecer un poco extraño. Originalmente, el
+    atributo  sólo controlaba  el tipo de ``Manager`` utilizado para el acceso al
+    campo relacionado, que es de donde surgió el nombre. Como se puso de manifiesto el concepto
+    era de utilidad más amplia, el nombre no se ha modificado. Esto se debe principalmente
+    a compatibilidad para que el código existente siga trabajando
+    :doc:`continue to work </misc/api-stability>` en futuras versiones de Django.
+
+Escribir ``Manager`` correctamente
+-----------------------------------
+
+Como ya se ha sugerido en el ejemplo anterior de el ``django.contrib.gis``, el metodo
+``use_for_related_fields`` funcióna principalmente para los ``Manager`` que  necesitan
+devolver una subclase personalizada ``QuerySet``. Al proporcionar esta funcionalidad en un
+manager, hay un par de cosas que se deven recordar.
+
+No filtrar ningún resultadofuera en este tipo de subclase manager
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Una razón para utilizar un manager automáticamente  es para acceder a los objetos
+que están relacionados a partir de algún otro modelo. En esas situaciones, Django
+tiene que ser capaz de ver todos los objetos para que el modelo que esta obteniendo,
+por lo que *cualquier cosa* que sea referidas puede ser recuperada.
+
+Si se sobreescribe el metodo  ``get_query_set()`` y filtramos las filas, Django
+puede retornar resultados incorrectos. No hagas eso. Un manager que filtra los resultados
+``get_query_set()`` no es apropiado para su uso como un manager automático.
+
+Establecer ``use_for_related_fields`` cuando definimos una clase
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+El atributo  ``use_for_related_fields`` debe establecerse en el manager  de la  *clase*, no
+en una *instancia* de la clase. El ejemplo anterior muestra la manera correcta de configurarlo
+mientras que el siguiente codigo no funcionará ::
+
+    # BAD: codigo incorrecto
+    class MyManager(models.Manager):
+        ...
+
+    # Sets the attribute on an instance of MyManager. Django will
+    # ignore this setting.
+    mgr = MyManager()
+    mgr.use_for_related_fields = True
+
+    class MyModel(models.Model):
+        ...
+        objects = mgr
+
+    # Fin del codigo incorrecto.
+
+Además no se puede cambiar el atributo de la clase de objeto después de que se haya
+utilizado en un modelo, ya que el valor del atributo se procesa cuando la clase del modelo
+se crea y no se puede volver a leer posteriormente. Establezemos el atributo de la clase
+manager cuando se define en primer lugar, como en el primer ejemplo de esta sección y
+todo funcionará sin problemas.
+

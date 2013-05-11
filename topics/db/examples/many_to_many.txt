@@ -1,0 +1,294 @@
+##########################
+Relaciones Many-to-Many
+##########################
+
+.. highlight:: pycon
+
+Para definir una relación muchos a muchos, utilizamos la relación :ref:`ref-manytomany`.
+
+En este ejemplo, un objeto ``Article`` puede ser publicado en múltiples objetos ``Publication``
+y una ``Publication`` tiene múltiples objetos ``Articles`` :
+
+.. code-block:: python
+
+    from django.db import models
+
+    class Publication(models.Model):
+        title = models.CharField(max_length=30)
+
+        def __unicode__(self):
+            return self.title
+
+        class Meta:
+            ordering = ('title',)
+
+    class Article(models.Model):
+        headline = models.CharField(max_length=100)
+        publications = models.ManyToManyField(Publication)
+
+        def __unicode__(self):
+            return self.headline
+
+        class Meta:
+            ordering = ('headline',)
+
+Estos ejemplos que siguen son  operaciones que se pueden realizar usando la API
+interactiva que nos facilita python.
+
+.. code-block:: bash
+
+    python manage.py shell
+
+Creamos un par de publicaciones::
+
+    >>> p1 = Publication(title='The Python Journal')
+    >>> p1.save()
+    >>> p2 = Publication(title='Science News')
+    >>> p2.save()
+    >>> p3 = Publication(title='Science Weekly')
+    >>> p3.save()
+
+Creamos un artículo::
+
+     >>> a1 = Article(headline='Django lets you build Web apps easily')
+
+No podemos asociar una publicación hasta que esta se haya guardado::
+
+    >>> a1.publications.add(p1)
+    Traceback (most recent call last):
+    ...
+    ValueError: 'Article' instance needs to have a primary key value before a many-to-many relationship can be used.
+
+La guardamos primeramente::
+
+    >>> a1.save ()
+
+Ahora ya podemos asociar un Articulo con una Publicacion::
+
+    >>> a1.publications.add(p1)
+
+Creamos otro artículo y lo guardamos para que aparezca en ambas publicaciones::
+
+    >>> a2 = Article(headline='NASA uses Python')
+    >>> a2.save()
+    >>> a2.publications.add(p1, p2)
+    >>> a2.publications.add(p3)
+
+Agregar una segunda vez es ACEPTABLE::
+
+    >>> a2.publications.add (p3)
+
+Agregar un objeto de tipo incorrecto levantara un error del tipo TypeError::
+
+   >>> a2.publications.add(a1)
+    Traceback (most recent call last):
+    ...
+    TypeError: 'Publication' instance expected
+
+Agregamos una publicación directamente vía ``publications.add`` usando los argumentos clave::
+
+    >>> new_publication = a2.publications.create(title='Highlights for Children')
+
+Los objetos del artículo tienen acceso a las relaciones de sus objetos  publication::
+
+    >>> a1.publications.all()
+    [<Publication: The Python Journal>]
+    >>> a2.publications.all()
+    [<Publication: Highlights for Children>, <Publication: Science News>, <Publication: Science Weekly>, <Publication: The Python Journal>]
+
+Los objetos de la publicación tienen acceso a los objetos relacionados del artículo::
+
+    >>> p2.article_set.all()
+    [<Article: NASA uses Python>]
+    >>> p1.article_set.all()
+    [<Article: Django lets you build Web apps easily>, <Article: NASA uses Python>]
+    >>> Publication.objects.get(id=4).article_set.all()
+    [<Article: NASA uses Python>]
+
+Las relaciones Many-to-many (muchos a muchos) pueden ser obtenidas a travez de la
+:ref:`lookups across relationships <lookups-that-span-relationships>` ::
+
+    >>> Article.objects.filter(publications__id__exact=1)
+    [<Article: Django lets you build Web apps easily>, <Article: NASA uses Python>]
+    >>> Article.objects.filter(publications__pk=1)
+    [<Article: Django lets you build Web apps easily>, <Article: NASA uses Python>]
+    >>> Article.objects.filter(publications=1)
+    [<Article: Django lets you build Web apps easily>, <Article: NASA uses Python>]
+    >>> Article.objects.filter(publications=p1)
+    [<Article: Django lets you build Web apps easily>, <Article: NASA uses Python>]
+
+    >>> Article.objects.filter(publications__title__startswith="Science")
+    [<Article: NASA uses Python>, <Article: NASA uses Python>]
+
+    >>> Article.objects.filter(publications__title__startswith="Science").distinct()
+    [<Article: NASA uses Python>]
+
+La función count() respecto a distinct() también funcionan::
+
+    >>> Article.objects.filter(publications__title__startswith="Science").count()
+    2
+
+    >>> Article.objects.filter(publications__title__startswith="Science").distinct().count()
+    1
+
+    >>> Article.objects.filter(publications__in=[1,2]).distinct()
+    [<Article: Django lets you build Web apps easily>, <Article: NASA uses Python>]
+    >>> Article.objects.filter(publications__in=[p1,p2]).distinct()
+    [<Article: Django lets you build Web apps easily>, <Article: NASA uses Python>]
+
+Las relaciones inversas m2m son soportadas (es decir, comenzando en la tabla que no tiene
+un ManyToManyField)::
+
+    >>> Publication.objects.filter(id__exact=1)
+    [<Publication: The Python Journal>]
+    >>> Publication.objects.filter(pk=1)
+    [<Publication: The Python Journal>]
+
+    >>> Publication.objects.filter(article__headline__startswith="NASA")
+    [<Publication: Highlights for Children>, <Publication: Science News>, <Publication: Science Weekly>, <Publication: The Python Journal>]
+
+    >>> Publication.objects.filter(article__id__exact=1)
+    [<Publication: The Python Journal>]
+    >>> Publication.objects.filter(article__pk=1)
+    [<Publication: The Python Journal>]
+    >>> Publication.objects.filter(article=1)
+    [<Publication: The Python Journal>]
+    >>> Publication.objects.filter(article=a1)
+    [<Publication: The Python Journal>]
+
+    >>> Publication.objects.filter(article__in=[1,2]).distinct()
+    [<Publication: Highlights for Children>, <Publication: Science News>, <Publication: Science Weekly>, <Publication: The Python Journal>]
+    >>> Publication.objects.filter(article__in=[a1,a2]).distinct()
+    [<Publication: Highlights for Children>, <Publication: Science News>, <Publication: Science Weekly>, <Publication: The Python Journal>]
+
+Excluir algun item de un artículo relacionado trabaja también como se esperaría,(aunque el SQL
+implicado es un poco mas complejo)::
+
+ >>> Article.objects.exclude(publications=p2)
+    [<Article: Django lets you build Web apps easily>]
+
+Si borramos una publicación, los objetos artículos no podrán tener acceso a el::
+
+    >>> p1.delete()
+    >>> Publication.objects.all()
+    [<Publication: Highlights for Children>, <Publication: Science News>, <Publication: Science Weekly>]
+    >>> a1 = Article.objects.get(pk=1)
+    >>> a1.publications.all()
+    []
+
+Si borramos un artículo, sus publicaciones no podrán tener acceso a el::
+
+    >>> a2.delete()
+    >>> Article.objects.all()
+    [<Article: Django lets you build Web apps easily>]
+    >>> p2.article_set.all()
+    []
+
+Agregando vía el  "otro" extremo de un m2m::
+
+    >>> a4 = Article(headline='NASA finds intelligent life on Earth')
+    >>> a4.save()
+    >>> p2.article_set.add(a4)
+    >>> p2.article_set.all()
+    [<Article: NASA finds intelligent life on Earth>]
+    >>> a4.publications.all()
+    [<Publication: Science News>]
+
+Agregando  vía el otro extremo usando palabras claves::
+
+    >>> new_article = p2.article_set.create(headline='Oxygen-free diet works wonders')
+    >>> p2.article_set.all()
+    [<Article: NASA finds intelligent life on Earth>, <Article: Oxygen-free diet works wonders>]
+    >>> a5 = p2.article_set.all()[1]
+    >>> a5.publications.all()
+    [<Publication: Science News>]
+
+Eliminando  publicaciones de un artículo::
+
+     >>> a4.publications.remove(p2)
+    >>> p2.article_set.all()
+    [<Article: Oxygen-free diet works wonders>]
+    >>> a4.publications.all()
+    []
+
+Y del otro extremo::
+
+    >>> p2.article_set.remove(a5)
+    >>> p2.article_set.all()
+    []
+    >>> a5.publications.all()
+    []
+
+Las relaciones pueden ser asignados. La asignación borra cualquier miembro determinado existente::
+
+    >>> a4.publications.all()
+    [<Publication: Science News>]
+    >>> a4.publications = [p3]
+    >>> a4.publications.all()
+    [<Publication: Science Weekly>]
+
+Las relaciones de un conjunto se pueden limpiar::
+
+    >>> p2.article_set.clear ()
+    >>> p2.article_set.all ()
+    []
+
+Y podemos borrar el otro extremo::
+
+    >>> p2.article_set.add(a4, a5)
+    >>> p2.article_set.all()
+    [<Article: NASA finds intelligent life on Earth>, <Article: Oxygen-free diet works wonders>]
+    >>> a4.publications.all()
+    [<Publication: Science News>, <Publication: Science Weekly>]
+    >>> a4.publications.clear()
+    >>> a4.publications.all()
+    []
+    >>> p2.article_set.all()
+    [<Article: Oxygen-free diet works wonders>]
+
+Volvemos a crear los artículos y las publicación que hemos borrado::
+
+    >>> p1 = Publication(title='The Python Journal')
+    >>> p1.save()
+    >>> a2 = Article(headline='NASA uses Python')
+    >>> a2.save()
+    >>> a2.publications.add(p1, p2, p3)
+
+Borramos alguna publicaciones en grupo - las referencias a las publicaciones deben ir::
+
+    >>> Publication.objects.filter(title__startswith='Science').delete()
+    >>> Publication.objects.all()
+    [<Publication: Highlights for Children>, <Publication: The Python Journal>]
+    >>> Article.objects.all()
+    [<Article: Django lets you build Web apps easily>, <Article: NASA finds intelligent life on Earth>, <Article: NASA uses Python>, <Article: Oxygen-free diet works wonders>]
+    >>> a2.publications.all()
+    [<Publication: The Python Journal>]
+
+Borramos un grupo  de  artículos - las referencias a los objetos suprimidos deben ir::
+
+    >>> q = Article.objects.filter(headline__startswith='Django')
+    >>> print q
+    [<Article: Django lets you build Web apps easily>]
+    >>> q.delete()
+
+Después de que borramos, el cache  de un  QuerySet necesita ser limpiado y la referencia a
+los objetos deben de  ir::
+
+    >>> print q
+    []
+    >>> p1.article_set.all()
+    [<Article: NASA uses Python>]
+
+Un modo alternativo de llamar a clear() es asignar un conjunto vacío::
+
+    >>> p1.article_set = []
+    >>> p1.article_set.all()
+    []
+
+    >>> a2.publications = [p1, new_publication]
+    >>> a2.publications.all()
+    [<Publication: Highlights for Children>, <Publication: The Python Journal>]
+    >>> a2.publications = []
+    >>> a2.publications.all()
+    []
+
