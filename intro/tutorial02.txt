@@ -1,0 +1,553 @@
+﻿=========================================
+Tu primera aplicación en Django, parte 2
+=========================================
+
+Esta guía comienza después del :doc:`Tutorial 1 <tutorial01>`
+Seguimos con la aplicación web de  encuestas y nos centraremos en la 
+Interfaz administrativa de Django generada automáticamente.
+
+.. admonition::  Filosofía
+
+    La Generación de los sitios administrativos para que su personal o clientes agreguen,
+    cambien  y borren  el contenido, es el trabajo aburrido que no requiere mucha 
+    creatividad. Por esta razón, Django automatiza enteramente la creación de las 
+    interfaces  administrativas  para los modelos.
+
+    Django fue escrito en un ambiente de  redacción, con una separación muy clara
+    entre los "editores de  contenido" y el sitio "público". Los encargados de sitio utilizan
+    el sistema para agregar nuevas noticias, eventos, marcadores, deportes, etc., y 
+    ese contenido es visualizado en el sitio público. Django soluciona el problema de 
+    crear una  interfaz unificada para que administradores del sitio corrijan el
+    contenido.
+
+    El área administrativa  no esta pensada para ser utilizado por los visitantes del sitio.
+    Este debe ser editado por el encargado del  el sitio el ``administrador``.
+    
+
+Activar el sitio de administración
+==================================
+
+El sitio de administración de Django no se activa por default -- es opcional --.
+Para activar el sitio de administración para su instalación, Hay que seguir estos
+tres pasos:
+
+* Descomentar ``"django.contrib.admin"`` en el archivo de configuración:
+  settings.py  en la variable de `INSTALLED_APPS`.
+
+* Ejecutar el comando ``python manage.py syncdb``. Cada ves que hemos  agregado 
+  una  nueva aplicación  en el archivo de configuración settings.py  necesitamos
+  actualizar las tablas de nuestra base de datos en   `INSTALLED_APPS`.
+
+* Editar el archivo  ``mysite/urls.py``: descomentar las líneas que hacen referencia
+  al  admin -- hay tres líneas en total que devemos descomentar. Este fichero es una
+  URLconf; ahondaremos mas sobre el tema  en el siguiente tutorial. Por  ahora, todo
+  lo que necesitamos conocer  es que mapea una URL con la raíz de las aplicaciones. Al final
+  debes de tener un fichero ``urls.py`` parecido  a este:
+
+.. parsed-literal::
+
+      from django.conf.urls import patterns, include, url
+
+      # Descomenta las dos líneas siguientes para habilitar  el admin:
+      **from django.contrib import admin**
+      **admin.autodiscover ()**
+
+      urlpatterns = modelos ('',
+      
+          # Ejemplo:
+          # url(r'^$', '{{ project_name }}.views.home', name='home'),
+          # url(r'^{{ project_name }}/', include('{{ project_name }}.foo.urls')),
+
+          # Descomenta la siguiente linea para ver la documentación:
+          # url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
+
+          # Descomenta la suiguiente linea para habilitar el admin:
+           **url(r'^admin/', include(admin.site.urls)),**
+      )
+     
+Las líneas en negrita son las que se necesitan descomentar.)
+
+Iniciar  el servidor del desarrollo
+===================================
+
+Iniciemos el  servidor del desarrollo y exploremos el sitio de administración.
+
+Recuerdas el Tutorial 1, como iniciamos el servidor de desarrollo así:
+
+.. code-block:: bash
+
+        python manage.py runserver
+
+Ahora, abrimos un navegador web y vamos a  "/admin/" en nuestro dominio
+local -- e.g.,  http://127.0.0.1:8000/admin/. Deberías  ver una pantalla de login
+como esta:
+
+.. image:: _images/admin01.png
+   :alt: Django admin Pantalla de Entrada o Login
+
+.. admonition:: ¿No es lo mismo que vez?
+
+    En este punto , si en lugar de ver la pagina de login, ves una pagina de error
+    tal  como esta:: 
+
+        ImportError at /admin/
+        cannot import name patterns
+        ...
+
+    entonces probablemente estas usando una versión de Django que no 
+    corresponde con esta  versión  para este tutorial, Tal vez quieras leer el
+    viejo tutorial o conseguir una nueva versión de Django.
+
+Entrar en el sitio de administración
+====================================
+
+Ahora, tras registrarnos en la pagina de login podemos ver una pagina de
+indice en la interfaz administrativa, (Creamos una cuenta de  superusuario  en 
+la  primera parte de esta guía, ¿ recuerdas ?)  Si no creaste una o la olvidaste
+puedes crear uno con::
+
+    python manage.py createsuperuser
+
+
+.. image:: _images/admin02.png
+   :alt: Indice de la pagina Administrativa
+
+Deberías poder ver algunas entradas de contenido editable que incluye
+Grupos, Usuarios, y Sitios. Éstas son creados por default por Django.
+
+Hacer que nuestra aplicación poll se pueda editar en el admin
+=============================================================
+
+¿Pero dónde esta  nuestra aplicación de encuestas? No se visualiza en la pagina
+del índice de la interfaz  administrativa. 
+Justamente tenemos que hacer una cosa mas: Necesitamos decirle a el ``admin``  
+que  nuestro objeto ``Poll`` tiene una interfaz administrativa, para hacer eso, 
+creamos un fichero llamado ``admin.py`` en el directorio  ``polls``, tal como 
+este, para registrarla:
+
+admin.py::
+
+    from polls.models import Poll
+    from django.contrib import admin
+
+    admin.site.register(Poll)
+
+Necesitamos reiniciar el servidor del desarrollo para ver los cambios. 
+Normalmente, el servidor auto-recarga el código cada vez que modificamos
+un fichero, solamente la acción de crear un nuevo fichero no acciona 
+la lógica de auto-recarga.
+
+Explorar libremente la funcionalidad del admin
+==============================================
+
+Ahora que hemos registrado nuestra aplicación ``Poll``, Django conoce como mostrar  y que
+mostrar en la pagina  índice del admin:
+
+.. image:: _images/admin03.png
+   :alt: Pagina indice de Django, Mostrando nuestra aplicación poll
+   
+   
+Damos click  en "Polls", ahora estamos en la pagina de "lista de cambios",
+esta visualiza todas las encuestas en la base de datos y nos permite cambiar y
+agregar mas encuestas.
+Recuerdas el "What's up?" que creamos en el primer tutorial aqui esta:
+
+.. image:: _images/admin04.png
+   :alt: Polls cambiar lista
+   
+Damos  Clic en "What's up?" para editarlo así:
+
+.. image:: _images/admin05.png
+   :alt: Editando un objeto Poll
+
+
+Alguna cosas a observar aquí:
+
+* La forma se genera automáticamente del modelo de la encuesta (Poll).
+
+* Los diversos tipos de campo de el modelo (:class:`~django.db.models.DateTimeField`,
+  :class:`~django.db.models.CharField`) corresponden a un apropiada  forma
+  HTML, en la entrada de información. Cada tipo de campo sabe visualizarse
+  automaticamente en la  interfaz administrativa de Django.
+  
+* Cada  :class:`~django.db.models.DateTimeField` proporciona accesos directos 
+  a  JavaScript, (widgets). Las fechas proporcionan un enlace a un widgets de tipo
+  calendario "Hoy"  y el tiempo  "Ahora" muestra un icono con una apropiada lista de opciones
+  para la hora, estos  atajos son comúnmente incorporados en la interfaz administrativa.
+
+En la parte inferior de la pagina tenemos cuatros opciones:
+
+* ``Grabar`` -- Guardar los cambios y vuelve a la pagina  de  cambiar-lista
+  de nuestras encuestas.
+
+* ``Grabar y continuar editando`` -- Guarda los cambios y recarga la pagina del ``admin``
+  para  continuar editando.
+
+* ``Grabar y añadir otro`` -- Guarda los  cambios y carga una nueva pagina 
+  en  blanco para añadir una nueva encuesta.
+
+* ``Eliminar`` -- Muestra un dialogo de confirmación para borrar una encuesta.
+
+.. admonition:: Cambiar el idioma por default:
+
+    El archivo ``settings.py`` de Django contiene una variable que nos permite
+    especificar el idioma a usar, aqui puedes encontrar la lista completa de
+    idiomas: http://www.i18nguy.com/unicode/language-identifiers.html::
+        
+       # Lenguaje para la instalación. Todas las opciones las puedes hallar aquí:
+       # http://www.i18nguy.com/unicode/language-identifiers.html
+       LANGUAGE_CODE = 'es' #(español)
+    
+    Por defecto viene con 'en' (ingles).
+
+Si el valor de la "fecha publicada" ("Date published") no corresponde con el 
+tiempo en que se  creó  la poll en el tutorial 1,  probablemente olvidamos 
+agregar el valor correcto al archivo  ``setting.py`` ala variable ``TIME_ZONE``.
+Cambiemoslo,  recargamos la pagina y checamos que los valores correctos
+aparezcan.
+
+Cambiemos  la hora y la fecha ("Date published") dando click en  "hoy" y "ahora" .
+en el widgets mostrado. grabamos  y continuamos editando.
+Damos click en  "historia" en  la parte superior derecha  y podremos ver una
+lista de los cambios hechos al objetos vía  Django admin, con el grupo
+fecha/hora, el usuario y la  persona que realizó los cambios:
+
+.. image:: _images/admin06.png
+   :alt: Historia de  el objeto  poll 
+   
+   
+Personalizar la Interfaz administrativa
+=======================================
+
+Tomemonos  algunos minutos para admirar todo el código que no tuvimos que 
+escribir. Al registrar la aplicación Poll  con  ``admin.site.register (Poll)``,
+Django construye  una representación de la forma del valor por defecto. 
+A menudo, no necesitaremos modificarla , De cualquier manera si queremos
+personalizarla  de acuerdo a   requisitos particulares   podemos decirle a django 
+las opciones que queramos registrar a nuestro objeto.
+
+Veamos cómo  trabaja reordenando los campos de la forma de acuerdo a su fecha
+de publicación (``pub_date``), modificamos el archivo admin.py así::
+
+Reemplazando la línea de ``admin.site.register (Poll)`` con::
+
+    class PollAdmin(admin.ModelAdmin):
+        fields = ['pub_date', 'question']
+
+    admin.site.register(Poll, PollAdmin)
+
+Podemos seguir un  patrón  -- crear un objeto para un modelo en el admin
+después pasarlo como segundo argumento a ``admin.site.register ()``
+-- en cualquier momento podremos necesitar cambiar las opciones del objeto 
+en el admin--.
+
+Este particular  cambio determina  que "Publication date"
+aparezca antes del campo  "Question" asi:
+
+.. image:: _images/admin07.png
+   :alt: Ordenando Campos
+
+Esto no es impresionante con solamente dos campos, pero si tuviéramos unas
+cuantas docenas de campos en el  admin cambiar los campos, nos daría una 
+intuitiva e importante usabilidad en los detalles.
+
+Y hablando de  formas con docenas de campos, también podemos partir las
+formas  en un conjunto de campos, para mejor visibilidad, volvemos a modificar
+``admin.py`` asi::
+
+      class PollAdmin(admin.ModelAdmin):
+        fieldsets = [
+            (None,               {'fields': ['question']}),
+            ('Date information', {'fields': ['pub_date']}),
+        ]
+
+El primer elemento de cada tupla es el titulo de cada campo, para
+cada conjunto de campos, aquí esta nuestra forma ahora:
+
+.. image:: _images/admin08.png
+   :alt: Forma con un conjunto de campos
+   
+Podemos  asignar  clases arbitrarias de HTML a cada fieldset. Django proporciona
+una clase  ``"collapse"`` (colapsar)  que visualiza un fieldset determinado inicialmente 
+colapsado.
+Esto es útil cuando tenemos  una forma muy larga que contenga un número de campos
+que no son muy usados en general, solo tenemos que darle click a "mostrar":
+
+.. code-block:: python
+
+    class PollAdmin(admin.ModelAdmin):
+        fieldsets = [
+            (None,               {'fields': ['question']}),
+            ('Date information', {'fields': ['pub_date'], 'classes': ['collapse']}),
+        ]
+
+.. image:: _images/admin09.png
+   :alt: Campos colapsados
+
+
+Agregando relaciones a objetos 
+===============================
+
+Ok, ya tenemos nuestra pagina de administrador pra nuestra encuesta. Pero una 
+encuesta  (``Poll``) tiene múltiples opciones (``Choices``), y nuestra  pagina
+de administrador no  muestra las opciones bien.
+
+Hay dos maneras de solucionar este problema. El primero es registrar  la opción
+(``Choice``)en la interfaz administrativa como hicimos con ``Poll``,
+y lo podemos hacer de la siguiente manera::
+ 
+    from polls.models import Choice
+
+    admin.site.register(Choice)
+
+Ahora la opción ``Choices`` esta disponible en la interfaz administrativa,
+nuestra forma “añadir choice” se parece a esta:
+
+.. image:: _images/admin10.png
+   :alt: Pagina de Opciones "Choice"
+
+En esta forma, el campo de la encuestas ``Poll`` es un rectángulo  que contiene
+todas las ``polls``  de nuestra base de datos. Django sabe
+que  :class:`~django.db.models.ForeignKey`  debe ser representado en la interfaz
+administrativa como un ``<select>`` rectángulo. En nuestro caso, solamente 
+tenemos una encuesta  hasta  este punto.
+
+También devemos observar que "añadir" tiene un  link a siguiente "Poll"
+Cada objeto con un ``ForeignKey`` tiene una relación con otro y esto hace que
+Cuando damos click en  "añadir" tenemos acceso a una ventana con 
+una nueva forma para  agregar una nueva ``choice`` o una ``poll`` y "guardarla"
+en la base de datos y dinámicamente agregar la opción seleccionada que estamos, mirando.
+
+Pero realmente, ésta es una manera ineficaz de agregar los objetos Choices al 
+sistema, sería mejor si pudiéramos  agregar un manojo de opciones directamente
+al  crear el objeto  encuesta, veamos como hacerlo.
+
+Quitamos  la llamada al  ``register()`` para el modelo Choice y Editamos  el 
+código del registro de ``Poll`` así:
+
+.. code-block:: python
+
+ class ChoiceInline(admin.StackedInline):
+        model = Choice
+        extra = 3
+
+    class PollAdmin(admin.ModelAdmin):
+        fieldsets = [
+            (None,               {'fields': ['question']}),
+            ('Date information', {'fields': ['pub_date'], 'classes': ['collapse']}),
+        ]
+        inlines = [ChoiceInline]
+
+    admin.site.register(Poll, PollAdmin)
+
+Esto le  dice a Django: Los objetos  Choices son editados en la pagina administrativa
+de Polls. Editamos el valor por defecto y  proporcionamos 3 campos extras
+para cada "choices".
+
+Cargamos "agregar poll" para ver cómo  luce ahora, tal vez necesitemos reiniciar
+el servidor del desarrollo:
+
+.. image:: _images/admin11.png
+   :alt: Agregar varias choices 
+
+Esto funciona mejor porque hay tres casillas  para las ``choices`` -- según lo especificamos
+en ``extra`` -- y cada vez que volvamos a la pagina de "cambios" podemos
+generar  otras tres opciones adicionales.
+
+Tenemos un pequeño problema aquí, esto toma mucho espacio en la pantalla para
+visualizar  todos  los campos y objetos que tenemos. Por esta
+razón, Django ofrece una manera tabular de visualizar los objetos relacionados 
+en línea; solo necesitamos  cambiar la declaración de 
+``ChoiceInline`` de::
+
+        class ChoiceInline(admin.TabularInline):
+        #...
+	
+Con el ``TabularInline`` (en vez de ``StackedInline``),
+los objetos relacionados se visualizan en un formato más compacto,
+
+
+.. image:: _images/admin12.png
+   :alt: Una pagina mas compacta
+
+
+Modificar la lista de cambios del admin
+=======================================
+
+Ahora que la pagina de la interfaz administrativa de nuestra encuesta nos parece bien
+hagamosle unos cambios  a la forma de  cambiar lista ("change list") 
+para  poder visualizar todas las encuestas en el sistema.
+
+En este punto tenemos:
+
+.. image::  _images/admin04.png
+   :alt: Polls cambiar lista
+   
+Por default, Django visualiza el ``str()`` de cada objeto. Pero seria algunas 
+veces más provechoso si pudiéramos  visualizar los campos individualmente
+Para hacer eso, utilizamos  la opción ``list_display`` del admin, que es un tupla
+de  nombres de  campos que se muestran como columnas , en la pagina
+de la lista de cambios "change list " para el objeto::
+
+    class PollAdmin(admin.ModelAdmin):
+        # ...
+        list_display = ('question', 'pub_date')
+
+Justamente también  agregamos ``was_published_recently``
+(publicado recientemente) el  método personal que creamos en el
+:doc:`Tutorial 1 <tutorial01>`,
+para poder visualizarlo tambien::
+
+     class PollAdmin(admin.ModelAdmin):
+        # ...
+        list_display = ('question', 'pub_date', 'was_published_recently')
+
+Ahora la pagina de la lista de cambios  de nuestra  encuesta se parece a esta:
+
+.. image:: _images/admin13.png
+   :alt: Pagina de la lista de cambios actualizada
+
+Ahora podemos dar clic en la parte superior de la columna para clasificar por
+esos valores -- excepto en el caso ``was_published_recently`` porque clasificar 
+por la salida  de un método arbitrario no  esta soportado . También debemos 
+observar que la cabecera de la columna para ``was_published_recently`` es por
+defecto, el nombre del método (con  los caracteres  subrayados  substituidos
+por los espacios), y cada lineas contiene la cadena que representa la salida.
+
+Podemos mejorar eso asignándole a el  método (en ``models.py``) algunos
+atributos, como sigue:
+
+.. code-block:: python 
+
+        class Poll(models.Model):
+        # ...
+        def was_published_recently(self):
+            return self.pub_date >= timezone.now() - datetime.timedelta(days=1)
+        was_published_recently.admin_order_field = 'pub_date'
+        was_published_recently.boolean = True
+        was_published_recently.short_description = 'Published recently?'
+	
+Editamos el  fichero de admin.py otra vez y agregamos una mejora a la pagina 
+de la lista de cambios de ``Poll``, agregamos un filtro y agregamos la línea siguiente a
+``PollAdmin``::
+
+    list_filter = ["pub_date"]
+
+Esto agrega un  "filtro" ala barra lateral que permite ala  gente filtrar la lista 
+de cambios por fecha, por el tipo de campo ``pub_date``:
+
+.. image:: _images/admin14.png
+   :alt: La lista de Polls , actualizada
+   
+El tipo de filtro visualizado depende del tipo de campo que estemos  filtrando 
+Porque  ``pub_date`` es una  clase de ``django.db.models.fields.DateTimeField``,
+Django conoce como mostrar  las opciones apropiadas del filtro: 
+"Cualquier fecha," "hoy," "Ultimos 7 días, " "este mes,"  "este año."
+("Any date," "Today," "Past 7 days," "This month," "This year.")
+
+Esto trabaja mejor. Con la suguiente linea agreguemos capacidad de  búsqueda::
+
+    search_fields = ["question"]
+
+.. image:: _images/admin15.png
+   :alt: Un campo de busqueda
+   
+Eso agrega una caja  de  búsqueda en la parte superior de la  lista de cambios.
+Cuando alguien entra buscando algunos términos  , Django buscará el campo de la 
+``question``. Podemos  utilizar tantos campos como queramos -- aunque 
+utiliza ``LIKE`` para recuperar información de la base de datos , lo mas 
+razonable es no hacerlo , para mantener su base de datos feliz.
+
+Finalmente, porque los objetos de la encuesta tienen fechas, sería conveniente 
+poder filtrarlos y ordenarlos por fechas . Agregamos  esta línea::
+
+    date_hierarchy = "pub_date"
+
+Eso agrega a la navegación jerarquía, por la fecha, arriba de la pagina de la lista 
+de  cambios, en la parte superior visualizara  todos los años disponibles.
+mostrara  abajo a los meses y, en última instancia, los días.
+
+Por ahora es es un buen momento para  observar todos los  cambios  que hemos
+echo ala pagina,  el valor por defecto es visualizar 100 items por cada 
+pagina. Listas de paginación, rectángulo de búsqueda,
+los filtros, las fecha-jerarquícas, las  columnas  ordenadas trabajan
+todas juntas como lo hubieramos pensado.
+
+Modificar la apariencia  de la interfaz administrativa 
+======================================================
+
+Claramente, tener  un titulo  "Administración de Django " en la parte superior
+de la pagina del administrador es ridículo, vamos a ver como personalizarlo, de cualquier
+manera es solo texto.
+
+Esto es fácil de cambiar,  usando  el sistema de plantillas  de Django,
+el sistema de plantillas es usado en la propia interfaz administrativa de Django. 
+
+Abrimos el archivo de configuración  (el ``mysite/settings.py``, recuerdas) 
+y buscamos la variable en setting.py  ``TEMPLATE_DIRS``, esta variable es
+un tupla de  directorios del sistema de ficheros que se
+encarga de  controlar y cargar las plantillas  de Django. Es el camino de  búsqueda
+de las plantillas de Django.
+
+Por default setting `TEMPLATE_DIRS` esta vacío. Así  que , vamos a  agregar
+una línea  para decirle a Django dónde están  nuestros plantillas::
+
+    TEMPLATE_DIRS = (
+        "/home/my_username/mytemplates", # cambia esto por tu directorio.
+    )
+
+Ahora copiamos  las plantillas  ``admin/base_site.html`` dentro del valor por 
+defecto de `TEMPLATE_DIRS` de  Django , del directorio del  código fuente de Django así mismo 
+(``django/contrib/admin/templates``) en un sub-directório del ``admin`` de
+cualquier directorio  que estemos  utilizando in setting `TEMPLATE_DIRS`.
+Por ejemplo, si nuestra  configuración incluye " /home/my_username/mytemplates'
+entonces copiar ``django/contrib/admin/templates/admin/base_site.html``
+a ``/home/my_username/mytemplates/admin/base_site.html``. 
+No te olvides del  subdirectório  ``admin``.
+
+Después, tenemos que editar  el fichero y substituir el texto genérico de Django
+por  el nombre de nuestro sitio o como mejor nos parezca.
+
+Esta Plantilla  contiene porciones de texto como  ``{% block branding %}``
+and ``{{ title }}``. las ``{%`` y ``{{`` son etiquetas que son parte de 
+el lenguaje de plantillas de Django. Cuando Django renderiza ``admin/base_site.html``
+estas  plantillas son evaluadas  para producir la pagina final  HTML .
+No te preocupes si no tiene se sentido para ti ahora -- ahondaremos mas sobre el
+tema en la :doc:`parte 3 de este tutorial <tutorial03>`.
+
+Observar que cualesquiera de las plantillas  del admin por default  pueden ser
+reemplazados o sobrescritas, para sobreescribir una plantilla  debemos hacer la misma cosa que 
+hicimos con ``base_site.html`` --copiarlo al  directorio de valor por defecto en
+nuestro directorio de plantillas y hacer los cambios pertinentes.
+
+Algún astuto lector puede preguntar : Pero si la  configuración de ``TEMPLATE_DIRS``
+estaba vació por default  ¿cómo Django encontraba las plantillas de la interfaz
+administrativa ? La respuesta es simple , por omisión , Django busca 
+automáticamente un sub-directório en ``templates/`` dentro  de cada subdirectorio
+de cada aplicación como soporte. Puedes leer la documentación sobre 
+``template loader`` para una  información mas completa.
+
+Personalizar la pagina de índice del admin
+==========================================
+
+En una nota similar, tal vez quieras modificar la apariencia y el diseño 
+de Django para  la pagina de índice del admin.
+
+Por default , visualiza todos las aplicaciones  listadas en el archivo de configuración
+settings en la variable ``INSTALLED_APPS`` que se han  registrado en al admin, en orden alfabético.
+Tal vez quieras hacer pequeños cambios en el diseño. Después de todo, el índice
+es probablemente la pagina  mas importante  de la  interfaz administrativa 
+y  debería  ser fácil de utilizar.
+
+La plantilla que vamos a modificar es ``admin/index.html``. (Hacemos lo mismo que
+hicimos con ``admin/base_site.html`` en la sección anterior
+-- copiarla del lugar por default  hasta  nuestro directorio de plantillas.).
+Al editar el fichero, podemos  ver una variable llamada ``app_list`` que contiene todas las aplicaciones
+que se han instalado en Django. En lugar  de usar todo  esto, podemos usar las conexiones
+para linkear objetos específicos  o cualquier cosa que consideremos mejor
+Una vez más  no te  preocupes  si no  no puedes entender el lenguaje de plantillas 
+--lo cubriremos más detalladamente en el Tutorial 3.
+
+Cuando te sientas  cómodo con el sitio de administración, puedes seguir
+:doc:`con la parte 3 de este  tutorial <tutorial03>` para  comenzar a trabajar
+con las vistas públicas de nuestra encuesta ``Poll``.

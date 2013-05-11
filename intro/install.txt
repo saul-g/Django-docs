@@ -1,0 +1,134 @@
+﻿Guía de Instalación rápida
+==========================
+
+Antes de que puedas utilizar Django, necesitas  instalarlo. Esta guía no
+pretende ser una completa  guía de instalación que cubra todas las posibles
+instalaciones de python y Django, si no simplemente una introducción sencilla
+y rápida que te pueda servir como introducción.
+
+Instalar Python
+---------------
+
+Django está escrito 100% en código Python, así que necesitarás
+instalar primero Python antes de poder usar Django, necesitas instalar Python
+2.3 o superior, aunque lo mejor es usar la versión 2.6 o la 2.7, estas versiones
+de python incluyen una base de datos ligera llamada sqlite_ , una base de datos
+ligera por lo que no tendrás que configurar una base de datos por el momento.
+Se espera que pueda funcionar con **python 3**  en la versión de
+django 1.5.
+
+.. _sqlite: http://sqlite.org/
+
+
+Si estás usando Linux o Mac OS X probablemente ya tienes instalado  Python.
+Escribe ``python`` en una terminal. Si ves algo así, Python está instalado::
+
+    Python 2.6.6 (r266:84292, Sep 15 2010, 15:52:39)
+    [GCC 4.4.5] on linux2
+    Type "help", "copyright", "credits" or "license" for more information.
+    >>>
+
+.. admonition:: Django en Jython
+
+    Si utilizas jython_ (una implementación de Python para la plataforma Java),
+    necesitar  seguir algunos pasos adicionales puedes  Ver :doc: /howto/jython
+    para mas  detalles.
+
+.. _jython: http://www.jython.org/
+
+Si ves un error como: ``"command not found"`` u ``"orden no encontrada"``,
+tienes que bajar e instalar Python. Fíjate en http://www.python.org/download/
+para empezar. La instalación es rápida y fácil.
+
+Instalar Django
+---------------
+
+En esta sección explicamos dos opciones de instalación: instalar un
+lanzamiento oficial e instalar desde Subversión.
+
+Instalar un lanzamiento oficial
+-------------------------------
+
+La mayoría de la gente querrá instalar el lanzamiento oficial más reciente
+de http://www.djangoproject.com/download/. Django usa el método ``distutils``
+estándar de instalación de Python, que en el mundo de Linux es así:
+
+#. Baja el tarball, que se llamará algo así como *Django-version.tar.gz*
+
+#. ``tar xzvf Django-*.tar.gz``
+
+#. ``cd Django-*``
+
+#. ``sudo python setup.py install``
+
+En Windows, es recomendable usar 7-Zip para manejar archivos comprimidos de todo
+tipo, incluyendo ``.tar.gz``. Puedes bajar 7-Zip de http://www.djangoproject.com/r/7zip/.
+
+Cambia a algún otro directorio e inicia ``python``. Si todo está funcionando
+bien, deberías poder importar el módulo ``django``::
+
+    >>> import django
+    >>> django.VERSION
+    (TU VERSION)
+
+Instalar una base de datos
+--------------------------
+
+Si instalaste una versión superior a  python 2.5, puedes saltarte este paso por ahora.
+y si quieres trabajar con un motor de base de datos "grande" como PostgreSQL,
+MySQL, u Oracle, puedes consultar la referencia sobre  ``database-installation``
+para mas información sobre  la instalación.
+
+Quitar cualquier versión antigua  de Django
+-------------------------------------------
+
+Si estas actualizando tu vieja instalación de Django,
+necesitaras desinstalar la versión de Django anterior
+antes de instalarte la nueva versión.
+
+Instalar Django
+---------------
+
+Tenemos  tres opciones fáciles para instalar Django:
+
+* Instalar una versión de Django de ``acuerdo a tu sistema operativo``
+  Ésta es la opción más rápida para los que tengan sistemas operativos
+  compatibles que distribuyan Django.
+
+* Instalar un ``version oficial``. Éste es el mejor enfoque para usuarios
+  que quieren un número de versión estable y no les preocupan ejecutar
+  una versión un poco más antigua de Django.
+
+* ``Instalar la  ultima versión  desarrollo`` Esta es la mejor opción para los
+  usuarios  que  quieren conocer  las nuevas  características y actualizaciones
+  del código  y que no tienen miedo de ejecutar la versión de desarrollo.
+
+.. admonition:: Nota:
+
+    ¡Usa siempre la documentación que corresponda ala versión de Django que
+    estas utilizando!
+
+    Si haces cualquiera de los primeros pasos mencionados, ten cuidado
+    de las partes de la documentación marcada como **nuevo en la versión de desarrollo**.
+    La frase señala las características por medio de una bandera que están
+    solamente disponibles en las versiones del desarrollo de Django y
+    probablemente no trabajará con una versión distinta.
+
+Verificar
+---------
+
+Para verificar que Django esta instalado correctamente ejecutamos en una terminal
+``python`` e importamos Django Así::
+
+  >>> import django
+  >>> print django.get_version()
+  1.4.2
+
+
+¡Eso es todo!
+-------------
+
+Eso es todo - Ahora lo que necesitas es leer el tutorial01_
+
+.. _tutorial01: http://django-book.blogspot.com/2012/08/tu-primera-aplicacion-en-django-parte-1.html
+

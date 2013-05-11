@@ -1,0 +1,227 @@
+﻿=================
+Qué leer después
+=================
+
+Bien si ya haz leído todo el material de introducción y haz decidido
+que te gustaría aprender a usar Django. Solo hemos arañado  la
+superficie con esta introducción (de hecho, si ya haz leído cada palabra
+de esta introducción apenas si haz leído menos de el 10% de la
+documentación total).
+
+Entonces ¿Que sigue?
+
+Bueno, siempre hemos sido grandes fans de aprender haciendo. En este punto,
+usted debe saber lo suficiente como para iniciar un proyecto propio y empezar
+a perder el tiempo. A medida que usted necesita aprender nuevos trucos,
+puede volver a la documentación.
+
+Hemos puesto mucho esfuerzo en la fabricación de la documentación de
+Django útil, fácil para leer y tan completa como sea posible. El resto
+de este documento explica más sobre cómo la documentación trabaja de modo
+que usted pueda hacer mas cosas con ella.
+
+(Sí, esta es la documentación acerca de la documentación. Tenga la seguridad de
+que no tenemos planes para escribir un documento sobre cómo leer el documento
+sobre la documentación.)
+
+Encontrar documentación
+==========================
+
+Django tiene una gran cantidad de documentación - cerca de 200.000 palabras-
+por lo que encontrar lo que usted necesita a veces puede ser un poco complicado.
+Un buen lugar para empezar seria la página de búsqueda y el índice.
+
+¡O puedes solamente empezar a hojear el material!
+
+Cómo se ordena la documentación
+==================================
+
+La documentación principal de Django está dividida en  "pedazos" diseñados para llenar
+diversas necesidades:
+
+* El material introductorio está diseñado para la gente nueva en Django
+  - o para el desarrollo web en general. No cubre nada en profundidad, sino que
+  da una visión general de alto nivel acerca de cómo desarrollar en Django.
+
+* Las guías de temas, por otro lado, profundizan en las partes individuales
+  de Django. Hay guías completas acerca de ``modelo``, motor de ``plantillas``,
+  ``formas`` y mucho más.
+
+  Esto es probablemente el lugar  donde usted querrá pasar la mayor parte de su
+  tiempo y si usted trabaja a su manera a través de estas guías debe salir sabiendo
+  casi todo lo que hay que saber acerca de Django.
+
+* El desarrollo web es a menudo tan amplio, no profundamente - los problemas
+  abarcan muchos campos. Hemos escrito una serie de guías prácticas que responden
+  a preguntas  comunes "¿Cómo hago ...?". Aquí encontrará información acerca de la
+  generación de PDFs con Django , escribir etiquetas personalizadas, plantillas y más.
+
+  Respuestas a preguntas muy comunes también se pueden encontrar en el FAQ .
+
+* Las guías y procedimientos no cubren cada una de todas las clases, funciones y métodos
+  disponible en Django - que sería abrumador cuando usted está tratando de
+  aprender-. En su lugar, los detalles acerca de las clases individuales,
+  funciones, métodos y los módulos se mantienen en la referencia. Este es el
+  lugar a donde puede  acudir para encontrar los detalles de una determinada función o
+  lo que desee.
+
+
+* Finalmente, hay algo de documentación "especializada" no relevante generalmente
+  para la mayoría de desarrolladores, Esta incluye  las notas de la versión, la
+  documentación de las características obsoletas , documentos internos a los
+  que desea agregar código para Django en sí y algunas otras cosas que simplemente
+  no se ajustan en ningún otra parte.
+
+
+Cómo se Actualiza la documentación
+==================================
+
+Así como la base de código de Django esta desarrolladose y mejorándose día a día,
+nuestra documentación está mejorando constantemente. Mejoramos la documentación
+por varias razones:
+
+* Para hacer correcciones de contenido, tales como la gramática/correcciones.
+* Para añadir información y/o ejemplos de las secciones existentes que necesitan ser ampliados.
+* Para documentar las características de Django que aún no están documentados.
+  (La lista de tales características se está reduciendo, sin embargo existe.)
+* Para añadir documentación a las nuevas características que se añaden, así como
+  cambiar comportamientos en la API de Django.
+
+La documentación de Django se mantiene en  el mismo sistema de control de fuentes
+que su código. Vive en el directorio `docs`_.  Cada documento en línea es un
+archivo de texto independiente en el repositorio.
+
+.. _docs: https://github.com/django/django/tree/master/docs
+
+Donde conseguirla
+=================
+
+Puedes leer la documentación de Django de varias maneras. Ellos son, por orden de preferencia:
+
+En la Web
+----------
+
+La versión más reciente de la documentación de Django vive en
+http:://docs.djangoproject.com/en/dev/ Estas páginas HTML se generan
+automáticamente a partir de los archivos de texto en el control de código fuente.
+Eso quiere decir que reflejan lo "último y mejor " de Django - que incluyen las
+correcciones y adiciones más recientes, y discuten las últimas características
+de Django, que sólo están disponibles para los usuarios de la versión de
+desarrollo--. (Véase Las diferencias entre las versiones  más abajo.)
+
+Le animamos a ayudar a mejorar la documentación mediante la presentación de los
+cambios, correcciones y sugerencias en el sistema de tickets .
+Los desarrolladores de Django vigilamos activamente el sistema de tickets_ y
+utilizamos sus comentarios para mejorar la documentación para todos.
+
+Tenga en cuenta, sin embargo, que las entradas deben referirse explícitamente a
+la documentación, en lugar de preguntar cuestiones de soporte técnico.
+Si usted necesita ayuda con alguna configuración especial de Django, pruebe
+la lista de correos de usuarios_ de Django o el canal de IRC django_ en primer lugar.
+
+.. _tickets: https://code.djangoproject.com/newticket?component=Documentation
+.. _usuarios: http://groups.google.com/group/django-users
+.. _django: irc://irc.freenode.net/django
+
+
+En texto plano
+--------------
+
+Para la lectura fuera de línea, o simplemente por comodidad, se puede leer la
+documentación de Django en texto plano.
+
+Si está utilizando una versión oficial de Django, tenga en cuenta que el paquete
+comprimido (tarball) del código incluye un directorio  ``docs/``, que contiene
+toda la documentación para este lanzamiento.
+
+Si está utilizando la versión de desarrollo de Django (aka "trunk"), tenga en
+cuenta que el directorio  ``docs/``  contiene toda la documentación.
+Puede actualizar tu repositorio Git para obtener los últimos cambios.
+
+Una forma poco tecnológica de tomar ventaja de la documentación  es mediante el uso de la
+utilidad grep en sistemas Unix, grep puede  buscar una frase en toda la
+documentación. Por ejemplo, esto le mostrará cada mención de la frase
+"max_length" en cualquier documento de Django:
+
+.. code-block:: bash
+
+    $ grep -r max_length /path/to/django/docs/
+
+Como HTML, localmente
+----------------------
+
+Usted puede conseguir una copia local de la documentación HTML  siguiendo unos sencillos pasos:
+
+* La documentación de Django utiliza un sistema llamado Sphinx__ para convertir
+  texto plano a HTML. Necesitaras  instalar Sphinx ya sea descargando e instalando
+  el paquete desde el sitio web  de Sphinx o usando  ``pip`` así:
+
+  .. code-block:: bash
+
+        $ sudo pip install Sphinx
+
+* A continuación, sólo se tiene que utilizar el Makefile incluido  para convertir
+  la documentación en HTML:
+
+  .. code-block:: bash
+
+        $ cd path/to/django/docs
+        $ make html
+
+Para ello necesitarás tener instalado GNU Make__.
+
+Si estás en Windows, también puede usar el archivo por lotes incluido:
+
+.. code-block:: bash
+
+     cd path\to\django\docs
+     make.bat html
+
+* La documentación HTML será colocado en ``docs/_build/html``.
+
+.. note::
+
+    La generación de la documentación de Django funciona con la versión 0.6 o
+    posterior de Sphinx, pero se recomienda usar directamente Sphinx 1.0.2 o posterior.
+
+__ http://sphinx.pocoo.org/
+__ http://www.gnu.org/software/make/
+
+Diferencias entre las versiones
+===============================
+
+Como se mencionó anteriormente, la documentación de texto en nuestro repositorio
+Git contiene las "últimas y más grandes" cambios y adiciones. Estos cambios
+suelen incluir la documentación de nuevas características añadidas en la versión
+de desarrollo de Django -- la versión de Django en  Git ("trunk"). Por eso,
+vale la pena señalar nuestra política de conservar directamente la documentación
+para varias versiones del framework.
+
+Seguimos esta política:
+
+* La documentación primaria en djangoproject.com es una versión en HTML de los
+  últimos documentos en git. Estos documentos corresponden siempre a la última
+  versión oficial de Django, más las características que hemos añadido/cambiado
+  en el framework **desde** la última versión.
+
+* Al añadir funciones a la versión de desarrollo de Django, tratamos de actualizar
+  la documentación en la misma transacción y commit en git.
+
+* Para distinguir los cambios/adiciones ala documentación utilizamos la frase:
+  "Nuevo en la versión X.Y", siendo X.Y la versión siguiente (por lo tanto, el que está siendo desarrollado).
+
+
+* La Documentación para una determinada versión de Django se congela una vez que
+  la versión ha sido lanzada oficialmente. Sigue siendo una instantánea de la
+  documentación a partir del momento de la liberación.
+  Vamos a hacer excepciones a esta regla en el caso de las actualizaciones de
+  seguridad retroactivos u otros cambios retroactivos de este tipo.
+  Una vez que la documentación se congela, se añade una nota a la parte superior
+  de cada documento congelado que dice "Estos documentos están congelados para la versión XXX de Django"
+  y los enlaces de la versión actual del documento.
+
+* La página web de la `documentación principal`_ incluye enlaces a la documentación
+  de todas las versiones anteriores.
+
+.. _documentación principal: https://docs.djangoproject.com/en/dev/
+
