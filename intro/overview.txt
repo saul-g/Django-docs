@@ -1,30 +1,31 @@
-﻿====================
+====================
 Django de un vistazo
 ====================
 
-Debido a que Django fue desarrollado en un ambiente rápido de noticias , fue 
-diseñado  par hacer las tareas mas comunes  del desarrollo web  rápidas  y fáciles.
-Este es una pequeña descripción de cómo escribir una  aplicaciones web con una 
-base de datos manejada por Django .
+Django fue desarrollado en sus inicios, en un ambiente rápido de noticias, fue 
+diseñado par hacer las tareas mas comunes del desarrollo web rápidas y fáciles.
+Este es una pequeña descripción sobre cómo escribir una aplicaciones web, con una 
+base de datos manejada por Django.
 
-La meta de este documento es darle bastante información  tecnica  para
-entender cómo  trabaja Django , solamente eso,  no pretende ser un tutorial de 
-referencia -- ¡pero tenemos ambas cosas! Cuando estes  listo para comenzar un proyecto 
+La meta de este documento es proporcionar información no tan técnica  para poder
+entender cómo  funciona  Django, solamente eso, no pretende ser un tutorial de 
+referencia -- ¡pero tenemos ambas cosas! Cuando estés  listo para comenzar un proyecto 
 con Django, puedes leer el tutorial  :doc:`Tutorial parte 01 <tutorial01>` o
-leer la documentación completa </topics/index>`.
+leer la documentación completa, para detalles mas técnicos.
 
-Diseña tu modelo
+Diseña tus modelo
 =================
 
 Aunque es posible usar Django sin una base de datos, Django incluye
 un mapeador objeto-relacional en el que es posible describir la
-estructura de la base de datos usando codigo Python.
+estructura de la base de datos usando solamente  código Python.
 
-La sintaxis del modelo de
-datos ofrece muchas formas de representar los modelos -- hasta ahora 
-hemos estado  resolviendo problemas con la  bases de datos por más de
-dos años. Aquí hay un ejemplo rápido::
+La sintaxis del modelo de datos ofrece muchas formas de representar los
+modelos -- hasta ahora  hemos estado  resolviendo problemas con la  base de 
+datos por más de dos años. Aquí hay un ejemplo rápido::
 
+
+    from django.db import models
 
     class Reporter(models.Model):
         full_name = models.CharField(max_length=70)
@@ -33,7 +34,7 @@ dos años. Aquí hay un ejemplo rápido::
             return self.full_name
 
     class Article(models.Model):
-        pub_date = models.DateTimeField()
+        pub_date = models.DateField()
         headline = models.CharField(max_length=200)
         content = models.TextField()
         reporter = models.ForeignKey(Reporter)
@@ -44,48 +45,49 @@ dos años. Aquí hay un ejemplo rápido::
 Instalalo
 ==========
 
-Con el modelo listo, ejecutamos  la utilidad de línea de comandos para
-crear la base de datos automáticamente:
+Con el modelo listo, ejecutamos  la utilidad de línea de comandos ``manage.py``
+para crear la base de datos automáticamente:
 
 .. code-block:: bash
 
     python manage.py syncdb
     
 El comando ``syncdb`` revisa todos los modelos disponibles y crea
-las tablas correspondientes en la base de datos si no existían
+las tablas correspondientes en la base de datos si es que no existían
 previamente.
 
 Disfrutando la  API
 ===================
 
-Con eso hemos conseguido, sin mayor esfuerzo, una expresiva :doc:`Python API </topics/db/queries>`
-para acceder a tus datos. La API se crea al vuelo, sin necesidad de
-generar código:
+Con esto hemos conseguido, crear la base de datos, sin mayor esfuerzo, 
+ahora podemos acceder a los datos gracias a una expresiva 
+:doc:`Python API </topics/db/queries>`. La API se crea al vuelo,
+sin necesidad de generar código:
 
 .. code-block:: python 
 
-    # Importa  los modelos de nuestra aplicación  "news".
+    # Importamos  los modelos de nuestra aplicación 
     >>> from news.models import Reporter, Article
 
-    # No  tenemos reporteros en el sistema.
+    # Aun no  tenemos reporteros en el sistema.
     >>> Reporter.objects.all()
     []
 
     # Creamos un nuevo Reportero.
     >>> r = Reporter(full_name='John Smith')
 
-    # Guardamos el objeto en la  base de datos .Podemos llamar a  save() explicitamente.
+    # Guardamos el objeto en la  base de datos. Necesitamos llamar a  save() explicitamente.
     >>> r.save()
 
     # Ahora tenemos un identificador ID.
     >>> r.id
     1
 
-    # Ahora vemos los nuevos reportes en la base de datos.
+    # Ahora vemos los nuevos reportero en la base de datos.
     >>> Reporter.objects.all()
     [<Reporter: John Smith>]
 
-    # Los campos son representados como atributos de objetos  Python .
+    # Los campos son representados como atributos de objetos  Python.
     >>> r.full_name
     'John Smith'
 
@@ -111,12 +113,12 @@ generar código:
     >>> Article.objects.all()
     [<Article: Django is cool>]
 
-    # Podemos acceder alos objetos la API.
+    # Podemos acceder alos objetos atraves de la API.
     >>> r = a.reporter
     >>> r.full_name
     'John Smith'
 
-    # Y viceversa: Los Reporteros pueden ser accedidos mediante la  API para acceder  a los articulos.
+    # Y viceversa: Los Reporteros pueden acceder mediante la  API  a los articulos.
     >>> r.article_set.all()
     [<Article: Django is cool>]
 
@@ -126,24 +128,23 @@ generar código:
     >>> Article.objects.filter(reporter__full_name__startswith="John")
     [<Article: Django is cool>]
 
-    # Cambiamos  un  objeto alterando sus atributos y llamando a guardar save().
+    # Cambiamos  un  objeto alterando sus atributos y llamando a guardar con el metodo save().
     >>> r.full_name = 'Billy Goat'
     >>> r.save()
 
-    # Borramos un objeto con  delete().
+    # Borramos un objeto con el metodo  delete().
     >>> r.delete()
 
     
 Una interfaz de administración dinámica 
 =======================================
 
-Una interfaz de administración dinámica: No es sólo los andamios, 
-es la casa completa
-Una vez que los modelos están definidos, Django puede crear
+Una interfaz de administración dinámica: no es sólo los andamios, 
+es la casa completa. Una vez que los modelos están definidos, Django puede crear
 automáticamente una interfaz de administración profesional y lista
 para producción -- un sitio web que permita a los usuarios
 autenticados agregar, cambiar y eliminar objetos. Es tan fácil como
-registrar tu modelo en el sitio de administración asi::
+registrar el modelo en el sitio de administración así::
 
     # En models.py...
 
@@ -156,7 +157,7 @@ registrar tu modelo en el sitio de administración asi::
         reporter = models.ForeignKey(Reporter)
 
 
-    # Creamos un archivo admin.py  en el mismo directorio...
+    # Creamos un archivo admin.py  en el mismo nivel que model.py.
 
     import models
     from django.contrib import admin
@@ -164,22 +165,22 @@ registrar tu modelo en el sitio de administración asi::
     admin.site.register(models.Article)
 
 La filosofía aquí es que el sitio pueda ser modificado por personal
-administrativo, o por un cliente, o tal vez por el mismo
+administrativo o por un cliente, o tal vez por el mismo
 desarrollador -- y no hay que preocuparse de crear interfaces de
 administración sólo para gestionar contenido.
 
-Un flujo de trabajo típico en la creación de aplicaciones Django es
+Un flujo de trabajo típico en la creación de aplicaciones Django, es
 crear modelos y habilitar el sitio de administración tan rápido
 como sea posible, de forma que el personal (o los clientes) puedan
 comenzar a introducir datos. Luego, desarrollar la forma en que los
 datos son presentados al público.
 
-Diseñar sus URL
-================
+Diseñar tus URL
+===============
 
 Un esquema de URLs limpio y elegante es un detalle importante en
 una aplicación web de alta calidad. Django incentiva el diseño de
-URLs elegante y no agrega ningún lastre a las URLs, como ``.php`` o
+URLs elegantes y no agrega ningún lastre a las URLs, como ``.php`` o
 ``.asp``.
 
 Para diseñar las URLs de la aplicación, se crea un módulo Python
@@ -188,7 +189,7 @@ que contiene un mapeo simple entre patrones de URLs y funciones
 Python. Las URLconfs también sirven para desacoplar las URLs del
 código Python.
 
-Así es como una URLconf quedaria para el ejemplo de arriba 
+Así es como una URLconf quedaría para el ejemplo de arriba 
 ``Reporter``/``Article``::
 
 
@@ -218,41 +219,39 @@ Por ejemplo, si un usuario solicita la  URL
 "/articles/2012/08/123/", Django
 llamaría a la función ``news.views.article_detail (request, "2012", "08", "123")``.
 
-Escribir vistas
-================
+Escribe tus vistas
+==================
 
-Cada visor (view) es responsable de hacer una de dos cosas:
+Cada vista (view) es responsable de hacer una de dos cosas:
 Devolver un objeto :class:`~django.http.HttpResponse`  con el contenido de la página
-solicitada, o lanzar una excepción como :class:`~django.http.Http404`. Lo demás es
+solicitada  o lanzar una excepción como :class:`~django.http.Http404`. Lo demás es
 responsabilidad del desarrollador.
 
-Generalmente, una vista recupera datos de acuerdo a los parámetros,
+Generalmente, una vista recupera datos de acuerdo a los parámetros que le hemos pasado,
 carga una plantilla y la rellena con los datos recuperados. Aquí
-hay un vista de ejemplo para el ``year_archive`` visto
-anteriormente::
+hay un vista para el ejemplo anterior: ``year_archive``::
 
     def year_archive(request, year):
         a_list = Article.objects.filter(pub_date__year=year)
         return render_to_response('news/year_archive.html', {'year': year, 'article_list': a_list})
 
-Este ejemplo usa el sistema de plantillas de Django :doc:`template system </topics/templates>`, el que posee
-varias características poderosas pero es lo suficientemente simple
+Este ejemplo usa el sistema de plantillas de Django :doc:`template system </topics/templates>`, este
+sistema  posee varias características poderosas pero es lo suficientemente simple
 para poder ser usado por no programadores.
 
-Diseñando tus plantillas
-========================
+Diseña tus plantillas
+=====================
 
 El código anterior carga la plantilla ``news/year_archive.html``.
 
-Diango tiene una ruta de búsqueda de plantillas, lo que permite
+Django tiene una ruta de búsqueda de plantillas, lo que permite
 minimizar la redundancia entre ellas. En la configuración de
 Django, es posible especificar una lista de directorios donde se
 buscarán las plantillas. Si una plantilla no existe en el primer
-directorio, se busca en el siguiente, y así sucesivamente.
+directorio, se busca en el siguiente y así sucesivamente.
 
-Supongamos que se encontró la plantilla
-``news/article_detail.html``. Aquí hay un ejemplo de cómo podría
-lucir esa plantilla:
+Supongamos que se encontró la plantilla ``news/article_detail.html``. 
+Aquí hay un ejemplo de cómo podría lucir esa plantilla:
 
 .. code-block:: html+django
 
@@ -271,14 +270,14 @@ lucir esa plantilla:
     {% endblock %}
 
 Las variables están encerradas por llaves dobles.
-``{{ article.headline }}`` significa "Desplegar el valor del
+``{{ article.headline }}`` significa "Mostrar el valor del
 atributo headline de article". Pero los puntos no sólo son usados
 para búsqueda de atributos: También pueden servir para búsquedas de
 claves en diccionarios, búsqueda de índices y llamadas a
 funciones.
 
 Notemos que ``{{ article.pub_date|date:"F j, Y" }}`` usa un "pipe"
-Unix (el caracter "\|"). Esto se llama un filtro de plantilla, y es
+Unix (el carácter "|"). Esto se llama un filtro de plantilla y es
 una forma de filtrar el valor de una variable. En este caso, el
 filtro ``date`` da formato a un objeto datetime de Python (tal como
 ocurre en la función date de PHP; sí, existe una idea buena en
@@ -291,7 +290,7 @@ pueden ejecutar código Python tras bambalinas.
 
 Finalmente, Django usa el concepto de "herencia de plantillas": Eso
 es lo que hace ``{% extends "base.html" %}``. Significa "Primero
-carga la plantilla lamada 'base', la cual tiene algunos bloques
+carga la plantilla llamada 'base', la cual tiene algunos bloques
 definidos, y rellénalos con los siguientes bloques". En otras
 palabras, permite disminuir dramáticamente la redundancia en las
 plantillas: Cada plantilla tiene que definir sólo lo que le es
@@ -312,16 +311,16 @@ Así es como podría lucir "base.html":
     </html>
 
 
-En pocas palabras, define el look-and-feel del sitio (con el logo
-del sitio), y provee espacios para ser rellenados por las
-plantillas hijas. Esto permite que el rediseño de un sitio tan
-fácil como cambiar un único archivo -- la plantilla base.
+En pocas palabras, define el look-and-feel del sitio (como el logo
+del sitio) y provee espacios para ser rellenados por las
+plantillas hijas. Esto permite que el rediseño de un sitio sea tan
+fácil como cambiar un único archivo -- la plantilla base. --
 
 Además permite crear múltiples versiones de un sitio, con
 diferentes plantillas base, reusando las plantillas hijas. Los
 creadores de Django han usado esta técnica para crear ediciones
-para dispositivos móviles notablemente distintas de algunos sitios
--- simplemente creando una nueva plantilla base.
+para dispositivos móviles, notablemente distintas de algunos sitios
+-- simplemente creando una nueva plantilla base.--
 
 Recuerda que no es necesario usar el sistema de plantillas de
 Django si es que prefieres otro sistema. Aunque el sistema de
@@ -337,9 +336,8 @@ desacoplada del resto.
 Ésto es solo  la superficie
 ===========================
 
-
 Esta ha sido sólo una vista rápida a la funcionalidad de Django.
-Otras características útiles son:
+Algunas otras características útiles que vale la pena mencionar  son:
 
 
 * Un framework de caché que se integra con memcached y otros
@@ -349,7 +347,7 @@ Otras características útiles son:
   de manera tan fácil como crear pequeñas clases Python.
 
 *  Interfaces de administración generadas automáticamente más sexys
-   -- esta introducción sólo toca la superficie del tema.
+   -- esta introducción sólo toca la superficie del tema.--
 
 Los siguientes pasos obvios son:
 
@@ -357,4 +355,3 @@ Los siguientes pasos obvios son:
 tutorial y unirte a
 `la comunidad <http://www.djangoproject.com/community/>`_. ¡Gracias
 por tu interés!
-
