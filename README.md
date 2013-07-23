@@ -1,7 +1,7 @@
 Django-docs
 ===========
 
-Traducción al español de la documentación oficial de Django
+Traducción al español de la documentación oficial de Django, el tutorial oficial en su version 1.6 en español.
 
 Django en español
 ------------------
