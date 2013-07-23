@@ -1,0 +1,36 @@
+Comenzando con Django
+=====================
+
+¿Eres nuevo en Django ó en el diseño web en general? bien, haz venido al lugar correcto, lee el siguiente tutorial, para rápidamente crear una aplicación web con Django.
+
+.. toctree::
+   :maxdepth: 1
+
+   overview
+   install
+   tutorial01
+   tutorial02 
+   tutorial03 
+   tutorial04 
+   tutorial05
+   tutorial06 
+   reusable-apps 
+   whatsnext 
+   contributing
+
+.. seealso::
+
+    Si eres nuevo usando `python`_, tal vez lo primero que necesitas es empezar por conocer este lenguaje de programación. Django es python 100%, así que si te sientes un poco cómodo con python probablemente sacaras mucho provecho de Django.
+
+    Si eres completamente nuevo en  programación, puede que lo mejor seria 
+    comenzar con esta `lista de recursos python para no-programadores`_.
+
+    Si ya sabes o conoces algunos  otros lenguajes y quieres ponerte rápidamente al día con python, se recomienda leer el libro  **Inmersión en python**,  (para `Python 2`_, o para `Python 3`_, (también disponible en  versión `impresa`_ ). Si estos libros no son tu estilo, hay bastantes `libros sobre python`_ que te pueden ayudar a empezar.
+
+
+    .. _python: http://python.org/
+    .. _lista de recursos python para no-programadores: http://wiki.python.org/moin/       BeginnersGuide/NonProgrammers
+    .. _Python 2: http://diveintopython.net/
+    .. _Python 3: http://diveintopython3.net/
+    .. _impresa: http://www.amazon.com/exec/obidos/ASIN/1590593561/ref=nosim/jacobian20
+    .. _libros sobre python: http://wiki.python.org/moin/PythonBooks
