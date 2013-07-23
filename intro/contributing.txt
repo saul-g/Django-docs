@@ -5,15 +5,15 @@ Escribiendo tu primer parche para Django
 Introducción
 ============
 
-¿Interesado en dar a la comunidad un poco? Tal vez encontraste un fallo
+¿Interesado en dar a la comunidad un poco?, tal vez has encontrado un error
 en Django que te gustaría corregir, o tal vez hay una pequeña característica que
 te gustaría añadir.
 
 Las contribuciones son en sí mismo la mejor manera de abordar y ver nuestras propias
 preocupaciones retribuidas a Django en sí.
-Esto puede parecer un poco intimidante al principio, pero en realidad es bastante simple.
-Esta guía te guiara te llevara a través de todo el proceso, por lo que puedes aprender con
-el ejemplo.
+Esto puede parecer un poco intimidante al principio, pero en realidad es bastante 
+simple. Esta guía te llevara paso a paso, a través de todo el proceso, por lo 
+que puedes aprender mediante el ejemplo.
 
 ¿Qué esperamos de este tutorial?
 ---------------------------------
@@ -23,12 +23,13 @@ la forma en que funciona Django. Esto quiere decir que deves ir poco a poco
 aprendiendo de una forma cómoda sobre los tutoriales existentes:
 :doc:`writing your first Django app</intro/tutorial01>`.
 Además, se necesita tener una buena comprensión de Python. Pero si no la tienes
-no te preocupes puedes leer `Dive Into Python`__  es un fantástico (y gratis)
-libro en línea para comenzar a programar en Python.
+no te preocupes puedes leer "Dive Into Python" (Inmersión en python)
+(para `Python 2`__, y para `Python 3`__)  es un libro fantásticos en línea (y gratis)
+para comenzar a programar en Python.
 
-Aquellos de ustedes que no están familiarizados con los sistemas de control de
-versiones tipo Trac, git  encontrarán que este tutorial y sus vínculos incluyen
-información suficiente para empezar. Sin embargo, es probable que quieras leer
+Si es que aun no estas familiarizado con los sistemas de control de
+versiones tipo Trac, git,  encontrarás que en  este tutorial se incluyen vínculos 
+con suficiente información para comenzar. Sin embargo, es probable que quieras leer
 un poco más acerca de estas herramientas diferentes entre si, si es que  vas a
 contribuir a Django con regularidad.
 
@@ -37,7 +38,7 @@ de modo que pueda ser de utilidad en audiencias más amplias.
 
 .. admonition:: Dónde obtener ayuda:
 
-    Si estás teniendo problemas a través de este tutorial, por favor envia un mensaje
+    Si tienes problemas a través de este tutorial, por favor envia un mensaje
     a `django-developers`__ o a través del chat  `#django-dev on irc.freenode.net`__
     para chatear con otros usuarios de Django que podrán resolver tus dudas y ayudarte.
 
@@ -50,9 +51,9 @@ __ irc://irc.freenode.net/django-dev
 
 A lo largo de este tutorial cubriremos la forma de contribuir con un parche para
 Django por primera vez.
-Al final de este tutorial, debes tener un conocimiento básico tanto de la
-las herramientas y los procesos involucrados en el proceso. En concreto, vamos a estar
-cubriendo los siguientes temas:
+Al final de este tutorial, tendras un conocimiento básico tanto de las 
+herramientas y los procesos involucrados en el proceso. En concreto, vamos a 
+cubrir  los siguientes temas:
 
 * La instalación de Git.
 * Cómo descargar una copia de desarrollo de Django.
@@ -60,7 +61,7 @@ cubriendo los siguientes temas:
 * Redactar una prueba para su revisión.
 * Escribir el código para una revisión.
 * Testear un parche.
-* Generación de un archivo de revisión de cambios.
+* Generar un archivo de revisión de cambios.
 * ¿Dónde buscar más información?.
 
 Una vez que hayas terminado con el tutorial, puedes buscar a través del resto de
@@ -80,7 +81,7 @@ terminal asi: ``git``. Si recibes un mensajes diciendo que el comando no puede
 ser encontrado, tendrás primero que descargarlo e instalarlo, consulta la
 sección `Git's download page`__ para mas información.
 
-Si no estás familiarizado con Git, siempre puedes encontrar más información sobre su
+Si no estás familiarizado con Git, puedes encontrar información util  sobre los
 comandos (una vez instalado) escribiendo ``git help`` en la línea de comandos.
 
 __ http://git-scm.com/download
@@ -98,13 +99,15 @@ Descarga el código fuente desde el repositorio de Django con el siguiente coman
 
 .. note::
 
-    Para los usuarios que deseen usar  `virtualenv`__, puede utilizar::
+    Para los usuarios que deseen usar  `virtualenv`__, pueden utilizar::
 
          pip install -e /path/to/your/local/clone/django/
 
-    Para asi enlazar el directorio clonado  con el entorno virtual. Esta es un gran
-    opción, aislar la copia de desarrollo de Django del resto de su sistema y
-    evitar posibles conflictos entre paquetes.
+    (Donde ``django``  es el directorio donde hemos clonado el repositorio,
+    que contiene el archivo ``setup.py``)
+    Para asi enlazar el directorio clonado  con el entorno virtual. Esta es una
+    exelente opción, aislar la copia de desarrollo de Django del resto de el 
+    sistema para evitar posibles conflictos entre paquetes.
 
 __ http://www.virtualenv.org
 
@@ -112,17 +115,16 @@ Retornar a una revisión previa de Django
 =============================================
 
 Para este tutorial, vamos a utilizar el `ticket #17549`__  como caso de estudio,
-por lo que vamos a retroceder en la versión de git y en la historia de Django  antes de
-de aplicar el ticket para el parche. Esto nos permitirá pasar por todos los pasos
+por lo que vamos a retroceder en el historial de versiónes de git sobre Django,
+antes de de aplicar el ticket para el parche. Esto nos permitirá cubrir todos los pasos
 necesarios para escribir ese parche desde cero, incluyendo la ejecución de un
 conjunto de pruebas para Django.
 
-**Ten en cuenta que, vamos a estar utilizando una versión del tronco de Django
-antigua para los efectos de este tutorial, siempre se debe utilizar
-la revisión de desarrollo actual de Django cuando se trabaja en un parche de un
-ticket!**
+**Ten en cuenta que, vamos a estar utilizando una versión antigua del tronco de Django
+para los efectos de este tutorial, siempre se debe utilizar la revisión actual 
+de desarrollo de Django cuando se trabaja en un parche de un ticket!**
 
-.. note ::
+.. admonition :: Nota:
 
     El parche para esta entrada fue escrita por Ulrich Petri, y se aplicó
     a Django como `commit ac2052ebc84c45709ab5f0f25e685bf656ce79bc`__.
@@ -139,16 +141,18 @@ parte de las revisiones de Django que vamos a utilizar a continuación  en el tu
 
     git checkout 39f5bc7fc3a4bb43ed8a1358b17fe0521a1a63ac
 
-Ejecutando un conjunto de pruebas Django por primera vez
+
+Ejecutando una suite de pruebas en Django por primera vez
 =========================================================
 
-Al contribuir a Django es muy importante que los cambios en el código no
+Cuando contribuimos a Django es muy importante que los cambios en el código no
 introduzcan mas errores en otras áreas de Django. Una forma de comprobar que Django
-trabaja después de realizar los cambios es mediante la ejecución de una suite de pruebas. Si todas
-las pruebas pasan, entonces se puede estar razonablemente seguro de que los cambios
-no han roto completamente a Django. Si nunca has ejecutado una suite de pruebas de Django
-antes, es una buena idea ejecutarla una vez antes sólo para familiarizarse con
-la forma en que se comporta y con la salida que aparece.
+trabaja después de realizar los cambios es mediante la ejecución de una suite de 
+pruebas. Si todas las pruebas pasan, entonces se puede estar razonablemente
+seguro de que los cambios no han roto completamente a Django.
+Si nunca has ejecutado una suite de pruebas en Django antes, es una buena idea
+ejecutarla una vez antes sólo para familiarizarse con la forma en que se comporta
+y con la  forma de salida.
 
 Podemos ejecutar el conjunto de pruebas, simplemente situándonos con el
 comando ``cd `` en el directorio  ``tests/``, si estás usando GNU/Linux, Mac OS X
@@ -162,7 +166,7 @@ un tutorial muy bueno en `nice tutorial`__.
 
 __ https://help.github.com/articles/set-up-git#platform-windows
 
-.. note::
+.. admonition:: Nota:
 
     Si utilizas ``virtualenv``, puede omitir ``PYTHONPATH=..`` cuando ejecutes
     las pruebas. Esto indica a Python que  busque a Django en el directorio padre
@@ -174,8 +178,8 @@ con más de 4800 diferentes pruebas, por lo que puede tardar entre 5 y 15 minuto
 en ejecutarse, en función de la velocidad de tu ordenador.
 
 Mientras la suite de pruebas de  Django se está ejecutando, verás una secuencia de caracteres
-que representa el estado de cada prueba como es ejecutado. ``E``  indica que un error
-fue lanzado durante una prueba y ``F`` indica que una de las afirmaciones de prueba ha fallado.
+que representan el estado de cada prueba como es ejecutado. ``E``  indica que un error
+fue lanzado durante una prueba y ``F`` indica que una de las pruebas ha fallado.
 Ambos se consideran fallos de prueba. Mientras tanto, ``x`` y ``s``
 indican fallas esperadas y las pruebas omitidas, respectivamente. Los puntos indican
 que se pasaron las pruebas.
@@ -186,10 +190,10 @@ para obtener una lista de las dependencias y asegurarte de instalar cualquiera d
 las bibliotecas faltantes para las pruebas relacionadas con los cambios que se está haciendo
 (que no necesitaremos ninguna para este tutorial).
 
-Una vez que se completan las pruebas, recibiremos un mensaje informándonos
+Una vez que se completan las pruebas, recibiremos un mensaje informándonos,
 si el conjunto de pruebas aprobó o no. Dado que aún no se ha realizado ningún
 cambio a el código de Django, la prueba de toda la suite **debería** aprobar. Si obtienes
-fallas o errores asegurarte de que has seguido todos los pasos anteriores
+fallas o errores asegurate de que has seguido todos los pasos anteriores
 correctamente. Puedes ver :ref:`running-unit-tests` para más información.
 
 Ten en cuenta que el tronco (trunk) de Django puede no ser estable siempre.
@@ -201,7 +205,7 @@ las fallas desglosados ​​por el tipo de versión de Python  y la base de dat
 
 __ http://ci.djangoproject.com/
 
-.. note::
+.. admonition:: Nota:
 
     Para este tutorial y ticket en que estamos trabajando, las pruebas son usando
     como base de datos SQLite, sin embargo, es posible (y, a veces es necesario) para
@@ -217,17 +221,17 @@ bug no vuelva a ser reintroducido en Django mas adelante. Una prueba de regresi�
 escrita de tal manera que produzca un error, mientras que todavía existe el error y pasar
 una vez que el error se halla corregido. Para los parches con nuevas características, deberán
 ser incluidas pruebas que garanticen que las nuevas características funcionan correctamente.
-Ellos también deberían fallar cuando la nueva característica no está presente, y luego pase una vez que
+Ellos también deberían fallar cuando la nueva característica no está presente y luego pasar una vez que
 se halla aplicado el parche.
 
 Una buena manera de hacer esto es escribir las nuevas pruebas en primer lugar, antes de hacer cualquier
 cambio en el código. Este estilo de desarrollo es llamado
 `test-driven development`__  y se puede aplicar tanto en proyectos completos y
 parches individuales. Después de escribir las pruebas, a continuación, las ejecutamos para asegurarnos
-que de no se han hecho cambios (ya que no se han fijado ese error o añadido todavía esa característica).
+que de no se han hecho cambios (ya que aun nos se han corregido ese error o añadido todavía esa característica).
 Si las nuevas pruebas  no fallan, tendrás que arreglarlas para que lo hagan.
 Después de todo, un análisis de regresión que pasa sin importar si un error está presente
-no es muy útil en la prevención de estos errores si se repita en el futuro.
+no, no es muy útil en la prevención de estos errores si se repitan en el futuro.
 
 Ahora, para nuestro ejemplo práctico.
 
@@ -238,17 +242,18 @@ Escribiendo algunas pruebas para  el ticket #17549
 
 El `Ticket #17549`__ describe la suma de la siguiente, pequeña característica::
 
-    Es útil para un campo URLField para darle una forma de abrir la dirección URL, de lo contrario
-    puede ser que también se utilice un CharField.
+    Es útil para un campo URLField para darle la opcion de abrir la dirección URL, de lo contrario
+    se podria utilizar de igual forma  un CharField.
 
 Con el fin de resolver este ticket, vamos a añadir un método ``render`` para
-el widget ``AdminURLFieldWidget`` con el fin de mostrar un vínculo al hacer clic encima de la entrada
-del widget. Antes de realizar estos cambios, sin embargo, vamos a escribir un par
-de ensayos para comprobar que nuestras funciones de modificación  funcionan correctamente y que continuara
-funcionando correctamente en el futuro.
+el widget ``AdminURLFieldWidget`` con el fin de mostrar un vínculo al hacer clic
+encima de la entrada del widget. Antes de realizar estos cambios, sin embargo, 
+vamos a escribir un par de pruebas para comprobar que las modificaciones que
+hicimos funcionan correctamente y lo continuaran haciendo en el futuro.
 
-Navega hasta el directorio de Django ``tests/regressiontests/admin_widgets/`` y  abre el archivo ``test.py``.
-Agrega el siguiente código justo en la línea 269  antes de la  clase ``AdminFileWidgetTest`` ::
+Navega hasta el directorio de Django ``tests/regressiontests/admin_widgets/``
+y  abre el archivo ``test.py``. Agrega el siguiente código justo en la línea 269 
+antes de la  clase ``AdminFileWidgetTest`` ::
 
     class AdminURLWidgetTest(DjangoTestCase):
         def test_render(self):
@@ -259,14 +264,18 @@ Agrega el siguiente código justo en la línea 269  antes de la  clase ``AdminFi
             )
             self.assertHTMLEqual(
                 conditional_escape(w.render('test', 'http://example.com')),
-                '<p class="url">Currently:<a href="http://example.com">http://example.com</a><br />Change:<input class="vURLField" name="test" type="text" value="http://example.com" /></p>'
+                '<p class="url">Currently:<a href="http://example.com">
+                http://example.com</a><br />Change:<input class="vURLField" 
+                name="test" type="text" value="http://example.com" /></p>'
             )
 
         def test_render_idn(self):
             w = widgets.AdminURLFieldWidget()
             self.assertHTMLEqual(
                 conditional_escape(w.render('test', 'http://example-äüö.com')),
-                '<p class="url">Currently:<a href="http://xn--example--7za4pnc.com">http://example-äüö.com</a><br />Change:<input class="vURLField" name="test" type="text" value="http://example-äüö.com" /></p>'
+                '<p class="url">Currently:<a href="http://xn--example--7za4pnc.com">
+                http://example-äüö.com</a><br />Change:<input class="vURLField"
+                 name="test" type="text" value="http://example-äüö.com" /></p>'
             )
 
         def test_render_quoting(self):
@@ -280,8 +289,8 @@ Agrega el siguiente código justo en la línea 269  antes de la  clase ``AdminFi
                 '<p class="url">Currently:<a href="http://xn--example--7za4pnc.com/%3Csometag%3Esome%20text%3C/sometag%3E">http://example-äüö.com/&lt;sometag&gt;some text&lt;/sometag&gt;</a><br />Change:<input class="vURLField" name="test" type="text" value="http://example-äüö.com/<sometag>some text</sometag>" /></p>'
             )
 
-Las nuevas pruebas verifican que el método ``render`` vaya agregando los nuevos trabajos
-correctamente en algunas situaciones diferentes.
+Las nuevas pruebas verifican que el método ``render``  agregue correctamente 
+los nuevos trabajos en algunas situaciones diferentes.
 
 .. admonition:: Pero esto parece una prueba un poco difícil...
 
@@ -294,7 +303,7 @@ correctamente en algunas situaciones diferentes.
     * Inmersión en Python (un libro gratis en línea para desarrolladores principiantes de Python)
       incluye un gran introducción a pruebas unitarias: `introduction to Unit Testing`__.
     * Después de leer esto, si quieres algo un poco más sustancioso puedes  hundirle
-      siempre el diente a la documentacion de Python, en la sección de: `Python unittest documentation`__.
+      el diente a la documentacion de Python, a la sección de: `Python unittest documentation`__.
 
 __ https://code.djangoproject.com/ticket/17549
 __ http://diveintopython.net/unit_testing/index.html
@@ -303,8 +312,8 @@ __ http://docs.python.org/library/unittest.html
 Ejecuando la nueva prueba
 -------------------------
 
-Recuerda que no se han realizado modificaciones en
-``AdminURLFieldWidget`` todavía, así que nuestras pruebas van a fallar. Vamos a correr todo el
+Recuerda que todavía, no se han realizado modificaciones en
+``AdminURLFieldWidget``,  así que nuestras pruebas van a fallar. Vamos a correr todo el
 conjunto de pruebas en la carpeta ``model_forms_regress`` para asegurarnos de que es lo que
 realmente sucede. Desde la línea de comandos, nos cambiamos de directorio con  ``cd`` ala carpeta
 ``tests/`` y ejecutamos ::
@@ -312,11 +321,11 @@ realmente sucede. Desde la línea de comandos, nos cambiamos de directorio con  
     PYTHONPATH=.. python runtests.py --settings=test_sqlite admin_widgets
 
 Si las pruebas se han ejecutado correctamente, deberías ver tres fallos correspondientes a cada
-uno de los métodos de ensayo que  hemos añadido. Si todas las pruebas pasaron, entonces también  querrás
-asegurarte de que se han agregado las nuevas pruebas que se muestran arriba en la clase y carpeta
-correspondiente.
+uno de los métodos de prueba que  hemos añadido. Si todas las pruebas pasan,
+entonces deves asegurarte de que no haber  agregado las nuevas pruebas en otro
+directorio.
 
-Escribir el código para su ticket
+Escribir el código para el ticket
 =================================
 
 A continuación vamos a añadir la funcionalidad descrita en `ticket #17549`__ a Django.
@@ -343,9 +352,10 @@ el siguiente método ``render`` después de el existente método ``__init__`` ::
 Verificando que la prueba pasa ahora
 ------------------------------------
 
-Una vez que hayas terminado las modificación de Django, es necesario asegurarse de que las pruebas
-que  escribimos antes pasen correctamente, para que podamos ver si el código que escribimos arriba está trabajando
-correctamente. Para ejecutar las pruebas nos cambiamos ala carpeta  ``admin_widgets`` con el comando
+Una vez que hayamos terminado las modificación de Django, es necesario asegurarnos
+de que las pruebas que  escribimos antes pasen correctamente, para que podamos
+ver si el código que escribimos arriba está trabajando correctamente.
+Para ejecutar las pruebas nos cambiamos ala carpeta  ``admin_widgets`` con el comando
 ``cd``  nos situamos en el directorio ``tests/`` y ejecutamos la prueba ::
 
     PYTHONPATH=.. python runtests.py --settings=test_sqlite admin_widgets
@@ -529,13 +539,13 @@ es recomendado.
 Ya que nunca hemos subido (committed) nuestros cambios a nivel local, necesitamos hecer lo siguiente para obtener una
 nueva rama de git como punto de partida ::
 
-    git reset - cabeza dura
+    git reset --hard HEAD
     git checkout master
 
 Más información para los nuevos contribuyentes
 ----------------------------------------------
 
-Antes de que puedas  escribir parches para Django, hay un poco más de
+Antes de que te pongas a escribir parches para Django, hay un poco más de
 información sobre las contribuciones que probablemente deberías echar un vistazo:
 
 * Debes asegurarse de leer la documentación de Django en
@@ -582,5 +592,8 @@ __ https://code.djangoproject.com/query?status=new&status=reopened&needs_tests=1
 Después de que un ticket  tiene un parche, tiene que ser revisado por un segundo par de de ojos.
 Después de cargar un parche o se presente una solicitud de extracción, asegurarte de actualizar los
 metadatos del ticket  mediante el establecimiento de las banderas correspondientes a el ticket que diga
-"has patch", "doesn't need tests", etc. ("tiene parche", "no necesita pruebas)", para que otros puedan encontrarlos para su revisión. Contribuyendo no necesariamente  significa escribir un parche desde cero. La revisión de parches existentes es también una contribución muy útil. Ver :doc:`/internals/contributing/triaging-tickets` para mas detalles.
-
+"has patch", "doesn't need tests", etc. ("tiene parche", "no necesita pruebas)",
+para que otros puedan encontrarlos para su revisión. 
+Contribuyendo no necesariamente  significa escribir un parche desde cero. 
+La revisión de parches existentes es también una contribución muy útil. 
+Ver :doc:`/internals/contributing/triaging-tickets` para mas detalles.
