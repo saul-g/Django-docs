@@ -1,0 +1,387 @@
+=================
+Tutorial avanzado
+================= 
+
+Como escribir aplicaciones reusables
+=====================================
+
+Si todavía no has completado el Tutoriales |version|, te alentamos a que lo revises, 
+para que tu proyecto de ejemplo coincida con el que se describe a continuación.
+
+Este tutorial comienza después del  :doc:`Tutorial 6 </intro/tutorial06>`
+Vamos a convertir nuestra aplicación de encuestas web  en un ``paquete``  
+independiente python de manera que podamos utilizarlo en nuevos proyectos
+y compartirlo con otras personas.
+
+
+.. Outline:
+
+.. * motivación
+..     * que es un paquete python?
+..     * que es una aplicación django?
+..     * Que es una aplicación reutilizable?
+
+.. * preparando
+..     * moviendo las  plantillas ala aplicación
+..     * directorio padre
+..     * agregando formato al paquete 
+..     * asociar documentos a paquetes.
+..     * construir paquetes
+
+.. * usando el paquete
+..     * cómo instalar
+
+.. * publicación
+..     * opciones para publicar
+..     * conectar los documentos a PyPI
+
+Material reusable
+=================
+
+Cuesta mucho trabajo para diseñar, construir, probar y para mantener
+una aplicación web. Muchos de estos problemas son  comunes en los proyectos
+python y Django. No sería genial si ¿pudiéramos ahorrar algo de
+este trabajo repetido y despues volver a usarlo?
+
+La reusabilidad  es la forma de vida en python. `The Python Package Index (PyPI)
+<http://guide.python-distribute.org/contributing.html#pypi-info>`_
+contiene un extenso número de paquetes que podemos utilizar en nuestros propios
+programas de python. Django en sí mismo es un paquete python.
+Esto significa que podemos tomar un paquete python  existente o una
+aplicación django y crear nuestro propio proyecto Web. Solamente necesitaremos
+escribir algunas partes para crear un proyecto único.
+
+Digamos que necesitamos comenzar un nuevo proyecto, que necesita  una
+aplicación de encuestas como en la que hemos estado trabajando. ¿Cómo hacemos
+esta aplicación reutilizable? Afortunadamente, estamos en el camino correcto
+Hemos empezamos por desacoplar la aplicación de encuestas del proyecto en la
+URLconf en el :doc:`Tutorial 3 </intro/tutorial03>`, mediante un ``include``.
+En este tutorial,  vamos a tomar otras medidas para hacer  la
+aplicación mas fácil de usar en nuevos proyectos y prepararla para publicar
+para que otros puedan usarla e instalarla.
+
+
+.. admonition:: ¿Paquete? ¿Aplicación?
+
+
+    Un paquete Python `package <http://docs.python.org/tutorial/modules.html#packages>`_
+    proporciona  una manera de agrupar código  relacionado entre si, para
+    que la reutilización sea mas fácil. Un paquete puede contener uno o
+    más archivos de código python (también conocida como "módulos").
+
+    Un paquete puede ser importado con la  sentencia ``import foo.bar``
+    o ``from foo import bar``. Para que un directorio (como el de  ``polls``)
+    pueda ser considerado un paquete, debe contener un fichero especial
+    llamado ``__init__.py``, incluso si este fichero esta vacío.
+
+    Un *aplicación* de Django es justamente un paquete python que esta
+    específicamente diseñado para utilizare en un proyecto de Django.
+    Un aplicación puede utilizar las convenciones comunes de Django,
+    por ejemplo tener un archivo ``models.py``.
+
+    Utilizamos el termino ``empaquetar`` para describir el proceso de crear
+    un paquete python mas fácil de instalar por otros. Esto puede parecer
+    un poco confuso, nosotros lo sabemos.
+
+Completando una aplicación reutilizable
+=======================================
+
+Después de terminar el tutorial anterior, nuestro proyecto se debe parecer a este::
+
+    mysite/
+        manage.py
+        mysite/
+            __init__.py
+            settings.py
+            urls.py
+            wsgi.py
+        polls/
+            __init__.py
+            admin.py
+            models.py
+            static/
+                polls
+                    images/
+                        background.gif
+                    style.css
+            templates/
+                polls/
+                    detail.html
+                    index.html
+                    results.html
+            tests.py
+            urls.py
+            views.py
+        templates/
+            admin/
+                base_site.html
+                
+                
+Hemos creado un directorio llamado ``mysite/templates`` en el :doc:`Tutorial 2 </intro/tutorial02>`.
+y otro ``polls/templates`` en :doc:`Tutorial 3 </intro/tutorial03>`. Ahora tal vez
+es más claro por qué se optó por tener directorios de plantillas separadas para el
+proyecto y para la aplicación: todo lo que forma  parte de la aplicación se 
+encuentra en el directorio ``polls``. Esto hace que la aplicación sea independiente
+y más fácil de usar en un nuevo proyecto.
+
+El directorio de encuestas ``polls``, ahora se puede copiar en un nuevo proyecto
+Django e inmediatamente utilizarlo. No esta listo aun  para ser publicado, para eso,
+es necesario primero empaquetar la aplicación,  para hacer más fácil para que otros
+lo  instalen.
+
+.. _installing-reusable-apps-prerequisites:
+
+
+Instalación de algunos requisitos previos
+=========================================
+
+El estado actual de los paquetes Python es un poco confuso, ya que se cuentan 
+con varias herramientas, para este tutorial, vamos a utilizar distribute_ para
+construir nuestro paquete. Este es uno de los proyectos mantenidos por la mayor
+de las  comunidades encargados del  viejo proyecto  ``setuptools``  . 
+También vamos a usar `pip` _ para desinstalarlo después de que hayamos terminado.
+Debemos  instalar estos dos paquetes ahora.
+Si necesitas ayuda, puedes consultar la guía de referencia :ref:`how to install
+Django with pip<installing-official-release>`. Puedes instalar ``distribute``
+de la misma manera.
+
+.. _distribute: http://pypi.python.org/pypi/distribute
+.. _pip: http://pypi.python.org/pypi/pip
+
+
+Empaquetando una aplicación
+===========================
+
+Los *paquetes* python se refieren a preparar una aplicación en un
+formato específico que pueda ser instalado y se pueda utilizar fácilmente.
+Django en sí mismo es un paquete como este solo que mas grande.
+Para un pequeña aplicación de encuestas, este proceso no es demasiado complicado.
+
+1. En primer lugar, creamos un directorio padre para las encuestas ``polls``,
+   fuera del proyecto Django, al directorio lo llamamos ``django-polls``.
+
+.. admonition:: Elegir un nombre para nuestra aplicación:    
+
+    Al elegir un nombre para el paquete, necesitamos comprobar el nombre con los
+    nombres de los recursos en PyPI para evitar conflictos con los paquetes 
+    existentes. A menudo es útil anteponer ``django-`` al nombre del módulo,
+    al crear un paquete de distribución. Esto ayuda a los que buscan 
+    aplicaciones Django identificar alguna aplicación específica.  
+
+2. Movemos el directorio ``polls`` a el directorio de  ``django-polls``.
+
+3. Creamos un archivo ``django-polls/README.txt`` con  el contenido
+   siguiente en formato rst::
+
+       =====
+       Polls
+       =====
+
+       Polls es una simple aplicación Django, de encuestas web. Para cada
+       pregunta, el visitante puede elegir entre un número fijo de respuestas.
+
+       La documentación detallada está en el directorio "doc".
+
+       Comienzo rápido
+       ---------------
+
+       1. Agregar la aplicación ``polls`` a su archivo de configuración
+          ``settings.py``, en la variable ``INSTALLED_APPS`` asi::
+
+            INSTALLED_APPS = (
+                ...
+                "polls",
+            )
+
+       2. Incluye la aplicación de encuestas en la URLconf de tu proyecto
+          urls.py de este modo::
+
+            (r'^polls/', include('polls.urls')),
+
+       3. Ejecuta el comando  ``python manage.py syncdb`` para crear los
+          modelos para las encuestas.
+
+       4. Inicia el servidor y visita la pagina  http://127.0.0.1:8000/admin/ 
+          para crear una encuesta (Necesitas habilitar la interfaz administrativa
+          para poder crear encuestas).
+
+       5. Visita la pagina http://127.0.0.1:8000/polls/ para participar en una encuesta.
+       
+4. Creamos un archivo  ``django-polls/LICENSE`` La elección de una licencia está
+más allá del alcance de este tutorial, pero basta con decir que el código 
+liberado sin una  licencia es *inútil*. Django y muchas de las aplicaciones
+compatibles con Django son distribuye bajo la licencia BSD, sin embargo, eres
+libre de elegir tu  propia licencia. Sólo ten en cuenta que la elección de una 
+licencias afectará a quien sea capaz de usar nuestro código.       
+
+5. A continuación vamos a crear un archivo ``setup.py`` que proporciona información 
+detallada sobre cómo construir e instalar la aplicación. Una explicación completa
+de este archivo esta más allá de el alcance de este tutorial, pero el `distribute docs
+<http://packages.python.org/distribute/setuptools.html>`_  tiene una exelente explicación.
+
+Creamos un archivo ``django-polls/setup.py`` con el siguiente contenido::
+
+    import os
+    from setuptools import setup
+
+    README = open(os.path.join(os.path.dirname(__file__), 'README.rst')).read()
+
+    # allow setup.py to be run from any path
+    os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
+
+    setup(
+        name='django-polls',
+        version='0.1',
+        packages=['polls'],
+        include_package_data=True,
+        license='BSD License',  # example license
+        description='A simple Django app to conduct Web-based polls.',
+        long_description=README,
+        url='http://www.example.com/',
+        author='Your Name',
+        author_email='yourname@example.com',
+        classifiers=[
+            'Environment :: Web Environment',
+            'Framework :: Django',
+            'Intended Audience :: Developers',
+            'License :: OSI Approved :: BSD License', # example license
+            'Operating System :: OS Independent',
+            'Programming Language :: Python',
+            'Programming Language :: Python :: 2.6',
+            'Programming Language :: Python :: 2.7',
+            'Topic :: Internet :: WWW/HTTP',
+            'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
+        ],
+    )
+    
+.. admonition:: ¿Creí que habías dicho que íbamos a usar ``distribute``?
+
+    Distribute es el reemplazo directo de ``setuptools``. A pesar de que
+    necesitamos importar ``setuptools``, ya que tenemos ``distribute``
+    instalado, prevalecerá sobre la importación.
+    
+    
+6. Sólo los módulos y paquetes Python se incluyen en el paquete por defecto. Para
+   incluir archivos adicionales, tendremos que crear un archivo ``MANIFEST.in`` la
+   documentacion sobre distribute ala que nos referimos en el paso anterior trata estos
+   detalles mas ha fondo. Para incluir las plantillas, los archivos ``README.rst``
+   y la ``LICENCE``, necesitamos crear un archivo ``django-polls/MANIFEST.in``
+   con el contenido siguiente::
+    
+   include LICENSE
+   include README.rst
+   recursive-include polls/static *
+   recursive-include polls/templates *
+
+
+7. Es opcional, pero se recomienda, incluir la documentación detallada de cada
+   aplicación. Creamos un directorio vacío ``django-polls/docs`` para futura
+   documentación. Agregamos una línea adicional a ``django-polls/MANIFEST.in``::
+
+       recursive-include docs *
+      
+   Ten en cuenta que el directorio ``docs`` no se incluirá en el paquete a menos
+   agreguemos algunos archivos al mismo. Muchas aplicaciones Django también
+   proporcionan la documentación en línea a través de sitios como 
+   `readthedocs.org <http://readthedocs.org>`_.
+
+8. Luego construimos el paquete con el comando ``python setup.py sdist``
+   (ejecutamos el comando desde dentro de la carpeta ``django-polls``).
+   Este crea un directorio llamado ``dist`` y construye una nuevo
+   paquete, ``django-polls-0.1.tar.gz``.
+ 
+Para más información sobre el empaquetado de aplicaciones, puedes ver
+`The Hitchhiker's Guide to Packaging  <http://guide.python-distribute.org/quickstart.html>`_.
+
+Usar nuestra aplicación
+=======================
+
+Puesto que movimos el directorio ``polls`` fuera del proyecto, éste ya no esta
+funcionamiento en nuestro proyecto. Ahora repararemos eso instalando una
+nueva aplicación el paquete ``django-polls`` que hemos creado.
+
+.. admonition:: Instalando una librería como usuario al sistema.
+
+   En los siguientes pasos instalaremos la aplicación ``django-polls`` como una 
+   librería de usuario, este tipo  de instalación tienen un montón de ventajas
+   con respecto a la instalación del paquete en el sistema, tal como se utiliza
+   en sistemas en los que no se  tiene acceso de administrador,
+   así como  para prevenir que el paquete pueda  afectar otros
+   servicios o a otros usuarios. Python 2.6 añade soporte para
+   bibliotecas de usuario, por lo que si estás utilizando una versión anterior
+   no va a funcionar, ya que Django 1.5 requiere Python 2.6 o más reciente.
+   
+   Ten en cuenta que las instalaciones por usuario  pueden afectar al comportamiento 
+   del sistema, de las herramientas que se ejecutan como ese usuario, por lo 
+   que  usar ``virtualenv`` es una solución más robusta
+   (ver más abajo).
+
+
+1. Dentro de ``django-polls/dist``, descomprimimos la aplicación con ``untar``
+   ``django-polls-0.1.tar.gz``(por ejemplo: ``xzvf django-polls-0.1.tar.gz``).
+   Si estamos utilizando Windows, podemos descargar y usar bsdtar_ y
+   usarlo en la linea de ordenes, o también podemos utilizar una herramienta
+   con interfaz-GUI como 7-zip_.
+
+2. Nos cambiamos a el directorio creado en el paso anterior (con ``cd django-polls``).
+
+3. Si estamos usando GNU/Linux, Mac  o algún tipo de Unix, podemos usar
+   el comando ``python setup.py install --user``  en el shell.  Si estamos
+   usando  Windows, necesitamos usar el shell de comandos y ejecutamos el
+   comando ``setup.py install --user``.
+
+   Con suerte, nuestro proyecto Django debe trabajar correctamente otra vez.
+   Ejecutamos el servidor para confirmarlo.
+
+4. Para desinstalar el paquete, usamos pip(ya lo instalamos :ref:`installed it
+   <installing-reusable-apps-prerequisites>`, cierto?)::
+
+        pip uninstall django-polls
+
+.. _bsdtar: http://gnuwin32.sourceforge.net/packages/bsdtar.htm
+.. _7-zip: http://www.7-zip.org/
+.. _pip: http://pypi.python.org/pypi/pip
+
+Publicar la aplicación
+======================
+
+Ahora que hemos empaquetado y testeado ``django-polls``, estamos listos
+para compartirla con ¡todo el mundo! Si esto no fuera un simple ejemplo,
+ahora podríamos:
+
+* Enviar por correo electrónico el paquete a un amigo.
+
+* Subir el paquete a nuestro sitio web.
+
+* Postear el paquete a un repositorio público, tal como `The Python Package Index
+  (PyPI) <http://guide.python-distribute.org/contributing.html#pypi-info>`_.
+
+Para más información sobre PyPI, puedes ver la guía rápida `Quickstart
+<http://guide.python-distribute.org/quickstart.html#register-your-package-with-the-python-package-index-pypi>`_
+en la sección sobre ``The Hitchhiker's Guide to Packaging``.
+Un detalle que no esta de mas mencionar es elegir el tipo de licencia bajo
+la cual se distribuye nuestro código.
+
+Instalar paquetes python con virtualenv
+=======================================
+
+Anteriormente, instalamos la aplicación de  encuestas como una biblioteca
+de usuario. Esta tiene algunas desventajas:
+ 
+* Al  modificar las bibliotecas del sistema podemos afectar otro software
+  python del sistema.
+
+* No podremos hacer funcionar múltiples versiones de este paquete(o otras
+  con el mismo nombre).
+
+Típicamente, estas situaciones únicamente se presentan si estamos
+manteniendo algunos proyectos Django. Cuando lo hacemos, la mejor solución
+es utilizar *virtualenv*. Esta herramienta permite que podamos mantener
+un ambiente aislado  de múltiples paquetes python, cada uno con sus propias
+copias de las librerías y el nombre del paquete.
+
+Puedes aprender más visitando el sitio web 
+`virtualenv <http://www.virtualenv.org/>`_
+
+Este tutorial termina de momento aquí. Mientras tanto, puede que quieras
+checar algunos algunos puntos en :doc:`where to go from here <whatsnext>`.
