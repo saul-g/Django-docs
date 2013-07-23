@@ -1,0 +1,137 @@
+=====================================
+Tu primera aplicación Django, parte 6
+=====================================
+
+Este tutorial comienza despues del :doc:`Tutorial 5 </intro/tutorial05>`.
+Una vez que hemos que hemos testeado nuestra una aplicación web-poll, vamos a
+agregar una hojas de estilo y una imagen.
+
+Aparte de el código HTML generado por el servidor, las aplicaciones web
+generalmente necesitan servir archivos adicionales - tales como imágenes,
+JavaScript o CSS - estos archivos  son necesarias para representar las páginas
+web completas. En Django, nos referimos a estos archivos como  "static files"
+(archivos estaticos).
+
+
+Para proyectos pequeños, esto no es un gran problema, ya que sólo necesitamos 
+mantener los archivos estáticos en algún lugar donde el servidor web pueda
+encontrarlos. Sin embargo, en proyectos grandes - especialmente aquellos que
+comprenden múltiples aplicaciones - al tratar con varios conjuntos de archivos
+estáticos proporcionados por cada aplicación esto puede ser muy  complicado.
+
+Eso es  para lo que se creo  ``django.contrib.staticfiles`` recoge los archivos estáticos
+de cada una de las aplicaciones (y cualquier otro lugar que especifiquemos) en
+una ubicación única que pueda servirse con facilidad en producción.
+
+Personalizar la apariencia de nuestra aplicación
+===================================================
+
+En primer lugar, creamos un directorio llamado ``státic`` en el directorio ``polls``.
+Django buscará los archivos estáticos allí, de manera similar a cómo Django encuentra las
+plantillas dentro de ``polls/templates/``.
+
+El archivo de configuraciones ``settings.py`` :setting:`STATICFILES_FINDERS`  de
+Django contiene una lista de los lugares donde debe buscar los diversos  archivos
+estáticos. Uno de los valores por defecto es ``AppDirectoriesFinder`` que
+busca un subdirectorio  "státic"  en cada uno de los ``AppDirectoriesFinder``
+como el de ``polls``  que acabamos de crear. El sitio administrativo
+utiliza la misma estructura de directorios para los archivos estáticos.
+
+Dentro del directorio ``static``  que acabamos de crear, creemos otro directorio
+llamado ``polls``  y dentro de este  creamos un archivo llamado ``style.css``.
+Es decir, la hoja de estilos,  debe estar en el directorio de encuestas
+``/static/polls/style.css``.  Porque es como  funciona el ``AppDirectoriesFinder``
+el bucador de archivos estaticos, podemos hacer referencia a este archivo estático 
+en Django simplemente como ``polls/ style.css`` de forma similar a la forma en
+que se hace referencia a la ruta de acceso para las plantillas.
+
+.. admonition:: Nombres iguales para los  ficheros estáticos
+
+    Al igual que las plantillas, podríamos poner directamnet nuestros archivos
+    esticos directamente en ``polls/static`` (en lugar de crear otros subdirectorio
+    ``polls``), pero en realidad sería una mala idea. Django elegirá el
+    primer archivo estático que encuentra que coincida con el nombre  y si
+    tenemos  un archivo estático con el mismo nombre en un archivo *diferente*
+    de otra aplicación, Django no podría  distinguir entre ellas. Tenemos que
+    asegurarnos que  Django  pueda encontrarlos  y la mejor manera de asegurarnos
+    que esto ocurra es usando  *espacios de nombres*. Es decir, poniendo los archivos estáticos
+    en el interior de  *otro directorio* con el nombre de la  propia aplicación.
+
+Colocamos  el siguiente código en la  hoja de estilos  (``polls/static/polls/style.css``):
+
+.. code-block:: css
+
+    li a {
+        color: green;
+    }
+
+
+A continuación, agregamos lo siguiente en la parte superior de
+ ``polls/templates/polls/index.html``:::
+
+
+.. code-block:: html+django
+
+    {% load staticfiles %}
+
+    <link rel="stylesheet" type="text/css" href="{% static 'polls/style.css' %}"
+
+La etiqueta ``{% load staticfiles %}`` carga las :ttag:`{% static %} <staticfiles-static>`
+etiquetas de  la liberia de plantillas ``staticfiles``. Las etiquesta de
+plantilla ``{% static %}``  usan la URL absoluta de los archivos estaticos.
+
+
+Eso es todo lo que necesitamos hacer para el desarrollo. Recargamos
+``Http://localhost:8000/polls/`` y podemos  ver que los vínculos alas  encuestas
+son de un color verde (estilo Django!) lo que significa que la hoja de estilos se ha
+cargado correctamente.
+
+Agregar una imagen de fondo
+===========================
+
+A continuación, vamos a crear un subdirectorio de imágenes. Creamos un subdirectorio
+``images``   en el  directorio ``polls/static/polls/``. Dentro de este directorio,
+ponemos una imagen llamada ``background.gif``. En otras palabras, ponemos la imagen
+en el directorio ``polls/static/polls/images/background.gif``.
+
+
+A continuación, añadimos la hoja de estilos (``polls/static/polls/style.css``):
+
+.. code-block:: css
+
+    body {
+        background: white url("images/background.gif") no-repeat right bottom;
+    }
+
+Actualizamos la pagina ``http://localhost:8000/polls/`` y deberíamos ver colocada 
+nuestra imagen, en  el fondo en la parte inferior derecha de la pantalla.
+
+.. warning::
+
+    Por supuesto que, las  etiqueta de plantilla ``{% static %}``  no estás 
+    disponible para su uso en los  archivos estáticos, como la hoja de estilos 
+    que no son generadas por Django. Siempre debemos  usar **rutas relativas** 
+    para vincular los archivos estáticos entre  otros, porque entonces se 
+    puede cambiar la variable :setting:`STATIC_URL` (utilizado por la etiqueta 
+    de plantilla  :ttag:`static` para generar las URL) sin tener que modificar
+    un montón de rutas en los archivos estáticos también.
+
+Estos son los **fundamentos** para obtener más información sobre la configuración
+y otras cosas incluidas con el  framework
+:doc:`the static files howto </howto/static-files/index>` y
+:doc:`the staticfiles reference </ref/contrib/staticfiles>`. :doc:`Deploying
+static files </howto/static-files/deployment>` discuciones sobre archivos estaticos
+servidos en servidores.
+
+
+Qué sigue
+=========
+
+El tutorial para principiantes termina aquí,  por el momento. Mientras tanto, es posible que
+quieras comprobar algunas otras caracteristicas,  para ello  puedes consultar :doc:`where to go from here
+</intro/whatsnext>`.
+
+Si estás familiarizado con los paquetes Python y estás interesado en  aprender cómo  
+convertir nuestra aplicacion ``polll``  en una "aplicación reutilizable", echa
+un vistazo a  :doc:`Advanced tutorial: How to
+write reusable apps</intro/reusable-apps>`.
