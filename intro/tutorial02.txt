@@ -1,10 +1,10 @@
-﻿=========================================
+=========================================
 Tu primera aplicación en Django, parte 2
 =========================================
 
-Esta guía comienza después del :doc:`Tutorial 1 <tutorial01>`
-Seguimos con la aplicación web de  encuestas y nos centraremos en la 
-Interfaz administrativa de Django generada automáticamente.
+Esta guía comienza después del :doc:`Tutorial 1 <tutorial01>`,
+seguimos con la aplicación web de  encuestas y nos centraremos en la 
+interfaz administrativa de Django generada automáticamente.
 
 .. admonition::  Filosofía
 
@@ -14,7 +14,7 @@ Interfaz administrativa de Django generada automáticamente.
     interfaces  administrativas  para los modelos.
 
     Django fue escrito en un ambiente de  redacción, con una separación muy clara
-    entre los "editores de  contenido" y el sitio "público". Los encargados de sitio utilizan
+    entre los "editores de  contenido" y el sitio "público". Los encargados del sitio utilizan
     el sistema para agregar nuevas noticias, eventos, marcadores, deportes, etc., y 
     ese contenido es visualizado en el sitio público. Django soluciona el problema de 
     crear una  interfaz unificada para que administradores del sitio corrijan el
@@ -65,14 +65,14 @@ tres pasos:
            **url(r'^admin/', include(admin.site.urls)),**
       )
      
-Las líneas en negrita son las que se necesitan descomentar.)
+* Las líneas en negrita son las que se necesitan descomentar.
 
 Iniciar  el servidor del desarrollo
 ===================================
 
 Iniciemos el  servidor del desarrollo y exploremos el sitio de administración.
 
-Recuerdas el Tutorial 1, como iniciamos el servidor de desarrollo así:
+Recuerdas en el Tutorial 1, como iniciamos el servidor de desarrollo así:
 
 .. code-block:: bash
 
@@ -94,8 +94,8 @@ como esta:
         cannot import name patterns
         ...
 
-    entonces probablemente estas usando una versión de Django que no 
-    corresponde con esta  versión  para este tutorial, Tal vez quieras leer el
+    Entonces probablemente estas usando una versión de Django que no 
+    corresponde con esta  versión  para este tutorial, Tal vez necesitas leer el
     viejo tutorial o conseguir una nueva versión de Django.
 
 Entrar en el sitio de administración
@@ -104,7 +104,7 @@ Entrar en el sitio de administración
 Ahora, tras registrarnos en la pagina de login podemos ver una pagina de
 indice en la interfaz administrativa, (Creamos una cuenta de  superusuario  en 
 la  primera parte de esta guía, ¿ recuerdas ?)  Si no creaste una o la olvidaste
-puedes crear uno con::
+puedes crear una con::
 
     python manage.py createsuperuser
 
@@ -125,7 +125,9 @@ que  nuestro objeto ``Poll`` tiene una interfaz administrativa, para hacer eso,
 creamos un fichero llamado ``admin.py`` en el directorio  ``polls``, tal como 
 este, para registrarla:
 
-admin.py::
+admin.py:
+
+.. code-block:: python
 
     from polls.models import Poll
     from django.contrib import admin
@@ -207,7 +209,7 @@ Cambiemoslo,  recargamos la pagina y checamos que los valores correctos
 aparezcan.
 
 Cambiemos  la hora y la fecha ("Date published") dando click en  "hoy" y "ahora" .
-en el widgets mostrado. grabamos  y continuamos editando.
+en el widgets mostrado, grabamos  y continuamos editando.
 Damos click en  "historia" en  la parte superior derecha  y podremos ver una
 lista de los cambios hechos al objetos vía  Django admin, con el grupo
 fecha/hora, el usuario y la  persona que realizó los cambios:
@@ -222,7 +224,7 @@ Personalizar la Interfaz administrativa
 Tomemonos  algunos minutos para admirar todo el código que no tuvimos que 
 escribir. Al registrar la aplicación Poll  con  ``admin.site.register (Poll)``,
 Django construye  una representación de la forma del valor por defecto. 
-A menudo, no necesitaremos modificarla , De cualquier manera si queremos
+A menudo, no necesitaremos modificarla, De cualquier manera si queremos
 personalizarla  de acuerdo a   requisitos particulares   podemos decirle a django 
 las opciones que queramos registrar a nuestro objeto.
 
@@ -288,8 +290,8 @@ que no son muy usados en general, solo tenemos que darle click a "mostrar":
 Agregando relaciones a objetos 
 ===============================
 
-Ok, ya tenemos nuestra pagina de administrador pra nuestra encuesta. Pero una 
-encuesta  (``Poll``) tiene múltiples opciones (``Choices``), y nuestra  pagina
+Ok, ya tenemos nuestra pagina de administrador para nuestra encuesta. Pero una 
+encuesta  (``Poll``) tiene múltiples opciones (``Choices``) y nuestra  pagina
 de administrador no  muestra las opciones bien.
 
 Hay dos maneras de solucionar este problema. El primero es registrar  la opción
@@ -322,7 +324,7 @@ Pero realmente, ésta es una manera ineficaz de agregar los objetos Choices al
 sistema, sería mejor si pudiéramos  agregar un manojo de opciones directamente
 al  crear el objeto  encuesta, veamos como hacerlo.
 
-Quitamos  la llamada al  ``register()`` para el modelo Choice y Editamos  el 
+Quitamos  la llamada al metodo ``register()`` para el modelo Choice y Editamos  el 
 código del registro de ``Poll`` así:
 
 .. code-block:: python
@@ -358,7 +360,7 @@ Tenemos un pequeño problema aquí, esto toma mucho espacio en la pantalla para
 visualizar  todos  los campos y objetos que tenemos. Por esta
 razón, Django ofrece una manera tabular de visualizar los objetos relacionados 
 en línea; solo necesitamos  cambiar la declaración de 
-``ChoiceInline`` de::
+``ChoiceInline`` a::
 
         class ChoiceInline(admin.TabularInline):
         #...
@@ -476,12 +478,14 @@ todas juntas como lo hubieramos pensado.
 Modificar la apariencia  de la interfaz administrativa 
 ======================================================
 
-Claramente, tener  un titulo  "Administración de Django " en la parte superior
-de la pagina del administrador es ridículo, vamos a ver como personalizarlo, de cualquier
-manera es solo texto.
+Claramente, tener al inicio de cada pagina la leyenda "Administracion de Django"
+es ridiculo. Este es solo un lugar para colocar texto.
 
-Esto es fácil de cambiar,  usando  el sistema de plantillas  de Django,
-el sistema de plantillas es usado en la propia interfaz administrativa de Django. 
+Esto es sencillo de cambiar, usando el sistema de plantillas de Django.La interfaz
+administrativa esta creada con Django en si mismo y la interfaz usa el propio sistema de
+plantillas 
+
+.. _ref-customizing-your-projects-templates:
 
 Abrimos el archivo de configuración  (el ``mysite/settings.py``, recuerdas) 
 y buscamos la variable en setting.py  ``TEMPLATE_DIRS``, esta variable es
@@ -501,11 +505,26 @@ defecto de `TEMPLATE_DIRS` de  Django , del directorio del  código fuente de Dj
 (``django/contrib/admin/templates``) en un sub-directório del ``admin`` de
 cualquier directorio  que estemos  utilizando in setting `TEMPLATE_DIRS`.
 Por ejemplo, si nuestra  configuración incluye " /home/my_username/mytemplates'
-entonces copiar ``django/contrib/admin/templates/admin/base_site.html``
+entonces necesitamos copiar ``django/contrib/admin/templates/admin/base_site.html``
 a ``/home/my_username/mytemplates/admin/base_site.html``. 
 No te olvides del  subdirectório  ``admin``.
 
-Después, tenemos que editar  el fichero y substituir el texto genérico de Django
+.. admonition:: ¿Donde estan los archivos fuente de Django?
+
+    Si tienes dificultades al encontrar los archivos fuente de Django, el lugar en el que estan 
+    localizados en tu sistema, puedes usar el siguiente comando para encontrar la ruta en que se 
+    encuentran en tu sistema:
+
+    .. code-block:: bash
+
+        python -c "
+        import sys
+        sys.path = sys.path[1:]
+        import django
+        print(django.__path__)"
+
+
+Después, solo tenemos que editar  el fichero y substituir el texto genérico de Django
 por  el nombre de nuestro sitio o como mejor nos parezca.
 
 Esta Plantilla  contiene porciones de texto como  ``{% block branding %}``
@@ -515,14 +534,14 @@ estas  plantillas son evaluadas  para producir la pagina final  HTML .
 No te preocupes si no tiene se sentido para ti ahora -- ahondaremos mas sobre el
 tema en la :doc:`parte 3 de este tutorial <tutorial03>`.
 
-Observar que cualesquiera de las plantillas  del admin por default  pueden ser
+Observa que cualquiera de las plantillas  del admin por default  pueden ser
 reemplazados o sobrescritas, para sobreescribir una plantilla  debemos hacer la misma cosa que 
-hicimos con ``base_site.html`` --copiarlo al  directorio de valor por defecto en
+hicimos con ``base_site.html`` --copiarla al  directorio de valor por defecto en
 nuestro directorio de plantillas y hacer los cambios pertinentes.
 
-Algún astuto lector puede preguntar : Pero si la  configuración de ``TEMPLATE_DIRS``
+Algún astuto lector puede preguntar: Pero si la  configuración de ``TEMPLATE_DIRS``
 estaba vació por default  ¿cómo Django encontraba las plantillas de la interfaz
-administrativa ? La respuesta es simple , por omisión , Django busca 
+administrativa ? La respuesta es simple, por omisión, Django busca 
 automáticamente un sub-directório en ``templates/`` dentro  de cada subdirectorio
 de cada aplicación como soporte. Puedes leer la documentación sobre 
 ``template loader`` para una  información mas completa.
