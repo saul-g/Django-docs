@@ -1,358 +1,717 @@
-﻿=====================================
-Tu primera aplicación Django, parte 5
-=====================================
+========================================
+Tu primera aplicación en Django, parte 5
+========================================
 
-Esta guía comienza después del  :doc:`Tutorial 4 <tutorial04>`.
-Convertiremos nuestra aplicación web de encuestas en un ``paquete``  
-independiente python de manera que podamos reutilizarlo en un nuevo proyecto
-y compartirlo con otras personas.
+Este tutorial comienza después del :doc:`Tutorial 4 </intro/tutorial04>`.
+Hemos construido una aplicación de encuestas web y ahora vamos a
+agregar algunas  pruebas automáticos para la misma.
 
-Si recientemente completaste el tutorial 1.4, este seria un buen momento
-para repasar tu ejemplo del proyecto para que corresponda con la forma
-descrita más abajo.
+Introducción a pruebas automatizadas
+====================================
 
-.. Outline:
+¿Qué son las pruebas automatizados?
+------------------------------------
 
-.. * motivación
-..     * que es un paquete python?
-..     * que es una aplicación django?
-..     * Que es una aplicación reutilizable?
+Las pruebas o tests son sencillas rutinas que verifican el funcionamiento de
+nuestro código.
 
-.. * preparando
-..     * moviendo las  plantillas ala aplicación
-..     * directorio padre
-..     * agregando formato al paquete 
-..     * asociar documentos a paquetes.
-..     * construir paquetes
-
-.. * usando el paquete
-..     * cómo instalar
-
-.. * publicación
-..     * opciones para publicar
-..     * conectar los documentos a PyPI
-
-Material reusable
-=================
-
-Cuesta mucho trabajo para diseñar, construir, probar y para mantener
-una aplicación web. Muchos de estos problemas son  comunes en los proyectos
-python y de Django. No sería genial si nosotros ¿pudiéramos guardar algo de
-este trabajo repetido y volver a usarlo?
-
-La reusabilidad  es la forma de vida en python. `The Python Package Index (PyPI)
-<http://guide.python-distribute.org/contributing.html#pypi-info>`_
-tiene un extenso número de paquetes que podemos utilizar en nuestros
-programas propios de python. Django en sí mismo es un paquete python.
-Esto significa que podemos tomar un paquete python  existente o una
-aplicación django y crear nuestro propio proyecto Web. Solamente necesitaremos
-escribir algunas partes para crear un proyecto único.
-
-Digamos que necesitamos empezar un nuevo proyecto, que necesita  una
-aplicación de encuestas como en la que hemos estado trabajando. ¿Cómo hacer
-esta aplicación reutilizable? Afortunadamente, estamos en el camino correcto
-Empezamos por desacoplar la aplicación de encuestas del proyecto en la
-URLconf en el :doc:`Tutorial 3 </intro/tutorial03>`.
-En este tutorial, seguiremos esos pasos he iremos mas allá para hacer la
-aplicación mas fácil de usar en nuevos proyectos y prepararla para publicar
-para que otros puedan usarla e instalarla.
+La pruebas operan en diferentes niveles. Algunos de las pruebas pueden aplicarse
+a un pequeño detalle  (*a un método en particular de un modelo que  devuelve el valor esperado?*),
+mientras que otros examinan  el funcionamiento en general del software -
+( * donde una secuencia de entradas de algún usuario produce  el resultado deseado?*)
+No son diferentes del tipo de pruebas que hicimos  en el
+:doc:`Tutorial 1 </intro/tutorial01>`, usando el shell para examinar el
+comportamiento de un método o al ejecutar la aplicación e ingresar
+datos para comprobar cómo se comportan.
 
 
-.. admonition:: ¿Paquete? ¿Aplicación?
+Lo que hace diferentes a los tests *automatizados* es que el trabajo de
+hacer las pruebas lo hace el sistema por uno. Uno crea un conjunto
+de tests una vez y luego a medida que se hacen cambios en la aplicación,
+se puede verificar que el código sigue todavía funcionando como estaba pensado
+originalmente, sin tener que perder tiempo haciendo el testing manualmente.
+
+Por qué es necesario crear tests
+---------------------------------
+
+¿Por qué crear pruebas y por qué ahora?
+
+Uno podría pensar que ya tiene suficiente con ir aprendiendo
+Python/Django y todavía tener que aprender algo más puede parecer
+demasiado y quizás innecesario. Después de todo nuestra aplicación
+de encuestas está funcionando; tomarse el trabajo de escribir tests
+automatizados no va a hacer que funcione mejor. Si crear esta
+aplicación de encuestas es la última tarea de programación con
+Django que vas a hacer, es cierto, no necesitas saber cómo crear
+tests automatizados. Pero, si no es el caso, este es un excelente
+momento para aprender.
+
+Los tests nos ahorrarán tiempo
+--------------------------------
+
+Hasta cierto punto, 'comprobar que todo funciona bien' en una prueba
+es satisfactorio. En una aplicación más sofisticada, podríamos tener
+docenas de interacciones complejas entre los componentes.
+
+Un cambio en cualquiera de esos componentes podría tener
+consecuencias inesperadas en el comportamiento de la aplicación.
+Comprobar que todavía 'parece que funciona' podría significar que devemos analizar
+el funcionamiento del código con veinte variaciones diferentes de datos y pruebas
+solo para estar seguros de que no se  haya roto algo- no es un buen
+uso del tiempo. 
 
 
-    Un paquete Python `package <http://docs.python.org/tutorial/modules.html#packages>`_
-    proporciona  una manera de agrupar código  relacionado entre si, para
-    que la reutilización sea mas fácil. Un paquete puede contener uno o
-    más archivos de código python (también conocida como "módulos").
+Esto es particularmente cierto cuando usamos tests automatizados que podrían
+hacerlo por uno en segundos. Si algo se rompió, los tests también
+ayudan a identificar el código que está causando el comportamiento
+inesperado.
 
-    Un paquete puede ser importado con la  sentencia ``import foo.bar``
-    o ``from foo import bar``. Para que un directorio (como las ``polls``)
-    pueda ser considerado un un paquete, debe contener un fichero especial
-    llamado ``__init__.py``, incluso si este fichero esta vacío.
+Algunas veces puede parecer una tarea que nos distrae de nuestro trabajo
+creativo de programación para dedicarnos al poco atractivo
+asunto de escribir tests, especialmente cuando uno sabe que el
+código está funcionando correctamente.
 
-    Un *aplicación* de Django es justamente un paquete python que esta
-    específicamente diseñado para utilizare en un proyecto de Django.
-    Un aplicación puede utilizar las convenciones comunes de Django,
-    por ejemplo tener un archivo ``models.py``.
+Sin embargo, la tarea de escribir pruebas es mucho mas gratificante que gastar
+horas probando la aplicación manualmente o intentando identificar
+la causa de un problema recién introducido.
 
-    Utilizamos el termino ``empaquetar`` para describir el proceso de crear
-    un paquete python mas fácil de instalar por otros. Esto puede parecer
-    un poco confuso, nosotros lo sabemos.
+Los tests no sólo identifican problemas, los previenen
+---------------------------------------------------------
 
-Completando una aplicación reutilizable
-=======================================
+Es un error pensar que los tests son un aspecto negativo del
+desarrollo.
 
-Después de terminar el tutorial anterior, nuestro proyecto se debe parecer a este::
+Sin tests, el propósito o comportamiento esperado de una aplicación
+podría ser poco claro. Incluso siendo nuestro propio código, algunas veces
+uno se encuentra tratando de adivinar qué es lo que hacía
+exactamente.
 
-    mysite/
-        manage.py
-        mysite/
-            __init__.py
-            settings.py
-            urls.py
-            wsgi.py
-        poll
-            admin.py
-            __init__.py
-            models.py
-            tests.py
-            urls.py
-            views.py
+Los tests cambian eso; iluminan el código desde adentro, y cuando
+algo va mal, iluminan la parte que va mal -
+*aún si uno no se dio cuenta de que algo va mal*.
 
-Deberías tener un directorio llamado ``templates`` que creamos en el
-:doc:`Tutorial 2 </intro/tutorial02>` . El cual especificamos su localización
-en el archivo ``settings.py`` en la variable ``TEMPLATE_DIRS``.
-Tu directorio debe ser parecido a este::
+Los tests hacen el código más atractivo
+------------------------------------------
+Podríamos crear una obra de software brillante, pero muchos
+desarrolladores simplemente se van a rehusar a usarlo  porque no
+tiene tests; sin tests, no van a confiar en ese software. Jacob
+Kaplan-Moss, uno de los desarrolladores originales de Django, dice
+“El código sin tests está roto por diseño”.
 
-    templates/
-        admin/
-            base_site.html
-        polls
-            detail.html
-            index.html
-            results.html
+El hecho de que otros desarrolladores quieran ver tests en nuestro
+software antes de tomarlo seriamente es otra razón para empezar a
+escribir tests.
 
-Nuestra aplicación de encuestas ``polls`` ya es un paquete python, gracias
-al  fichero ``polls/__init__.py``. Esto es un gran comienzo, pero aun no
-podemos poner simplemente nuestro paquete en un nuevo proyecto.
-Las plantillas de nuestra encuestas se guardaron  en  un directorio del
-lado del proyecto ``templates``. Para hacer nuestra aplicación independiente,
-debemos tener nuestras plantillas en nuestro paquete.
+Los tests ayudan a trabajar en equipo
+------------------------------------------
 
-Dentro de la aplicación ``polls``, creamos un nuevo  directorio ``templates``
-Ahora movemos ``polls`` a el directorio de las plantillas  ``templates`` a
-a el nuevo ``templates``. Ahora nuestro proyecto se parece a este::
+Los puntos anteriores están escritos desde el punto de vista de un
+único desarrollador manteniendo una aplicación. Aplicaciones
+complejas son mantenidas por equipos. Los tests garantizan que
+otros colegas no rompan nuestro código sin darse cuenta (y que uno
+no rompe el de ellos sin saberlo). Si uno quiere vivir de la
+programación con Django, debe ser bueno escribiendo tests!
 
-    mysite/
-        manage.py
-        mysite/
-            __init__.py
-            settings.py
-            urls.py
-            wsgi.py
-        polls
-            admin.py
-            __init__.py
-            models.py
-            templates/
-                polls/
-                    detail.html
-                    index.html
-                    results.html
-            tests.py
-            urls.py
-            views.py
+Estrategias de testing básicas
+--------------------------------
 
-El directorio del lado del proyecto para las plantillas ahora se parece a este::
+Existen varias maneras de aprender a escribir tests.
 
-    templates/
-        admin/
-            base_site.html
+Algunos programadores siguen una disciplina llamada
+"`test-driven development`_", (desarrollo dirigido por tests); 
+los tests se escriben antes de escribir el código. 
+Puede parecer contrario ala intuición, pero en realidad es similar a lo que la mayoría
+de la gente a menudo hace: describen un problema, luego crear el código que lo resuelve.
+basado en pruebas, Test-driven development simplemente formaliza el problema como un
+caso de test Python.
 
-¡Que bien! Ahora puede ser un buen momento para confirmar que nuestra
-aplicación de encuestas trabaja correctamente.
+La mayoría de las veces, algún principiante en testing crea el código y más tarde
+decide que debe escribir algunos tests. Tal vez hubiera sido mejor
+escribir los tests antes, pero nunca es tarde para empezar.
 
-Si por otro lado incluiste las plantillas desde el comienzo en la aplicación
-``polls`` te haz ahorrado todo este trabajo.
+A veces es difícil darse cuenta por dónde empezar al escribir
+tests. Si uno escribió varios miles de líneas de código Python, elegir qué
+testear puede no ser fácil. En ese caso, es provechoso escribir el
+primer test la próxima vez que uno hace un cambio, ya sea una nueva
+funcionalidad o se corrige un error.
 
-El directorio ``polls`` ahora puede ser copiado en un nuevo proyecto Django y
-reutilizado inmediatamente. No está sin embargo listo todavía para ser
-publicado, para eso, primero necesitamos empaquetar la aplicación
-para hacerla mas fácil de instalar por otros.
+Vamos a hacer eso entonces.
 
-.. admonition:: ¿Por qué la jerarquía?
+.. _test-driven development: http://en.wikipedia.org/wiki/Test-driven_development
 
-   Porqué creamos el directorio ``polls`` bajo el directorio ``templates``
-   en las plantillas cuando estaba dentro de la aplicación ``polls``
-   Este directorio es necesario para  evitar  conflictos con el cargador
-   de plantillas de Django ``app_directories``.
+Escribiendo nuestro primer test
+-----------------------------------
 
-Empaquetando una aplicación
-===========================
+Identificamos un bug
+------------------------
 
-Los *paquetes* python se refieren a preparar una aplicación en un
-formato específico que pueda ser instalado y se pueda utilizar fácilmente.
-Django en sí mismo es un paquete como este solo que mas grande.
-Para un pequeña aplicación de encuestas, este proceso no es demasiado difícil.
+Por suerte, hay un pequeño bug en la aplicación  ``polls`` que podemos
+arreglar: el método ``Poll.was_published_recently()``  devuelve ``True``
+si una ``Poll`` fue publicada el día anterior (que está bien), pero
+también si el campo tiene una fecha en el futuro ``pub_date`` (que no está bien!).
 
-1. En primer lugar, creamos un directorio padre para las encuestas ``polls``,
-   fuera del proyecto Django, al directorio lo llamamos ``django-polls``.
+Podemos verlo en el Admin; creamos una encuesta cuya fecha se en el
+futuro; veremos que el listado de encuestas nos dice que fue
+publicada recientemente.
 
-2. Movemos el directorio ``polls`` a el directorio de las ``django-polls``.
+También podemos verlo usando el shell::
 
-3. Creamos un archivo ``django-polls/README.txt`` con  el contenido
-   siguiente en formato rst::
 
-       =====
-       Polls
-       =====
+    >>> import datetime
+    >>> from django.utils import timezone
+    >>> from polls.models import Poll
+    >>> # create a Poll instance with pub_date 30 days in the future
+    >>> future_poll = Poll(pub_date=timezone.now() + datetime.timedelta(days=30))
+    >>> # was it published recently?
+    >>> future_poll.was_published_recently()
+    True
 
-       Polls es una simple aplicación Django, de encuestas web. Para cada
-       pregunta, el visitante puede elegir entre un número fijo de respuestas.
+Dado que las cosas en el futuro no son 'recientes', esto es
+incorrecto.
 
-       La documentación detallada está en el directorio "doc".
+Creamos un test que exponga el bug
+------------------------------------
 
-       Comienzo rápido
-       ---------------
+Lo que acabamos de hacer en el shell para verificar el problema es
+exactamente lo que podemos hacer en un test automatizado. Hagámoslo
+entonces.
 
-       1. Agregar la aplicación ``polls`` a su archivo de configuración
-          ``settings.py``, en la variable ``INSTALLED_APPS`` asi::
+El mejor lugar para los tests de una aplicación es el archivo
+``tests.py``- el  sistema de pruebas automáticamente buscara tests en cualquier
+archivo cuyo nombre comience con ``test``.
 
-            INSTALLED_APPS = (
-                ...
-                "polls",
+Ponemos el siguiente código en el archivo ``tests.py`` de la aplicación
+``polls``::
+
+
+    import datetime
+
+    from django.utils import timezone
+    from django.test import TestCase
+
+    from polls.models import Poll
+
+    class PollMethodTests(TestCase):
+
+        def test_was_published_recently_with_future_poll(self):
+            """
+            was_published_recently() should return False for polls whose
+            pub_date is in the future
+            """
+            future_poll = Poll(pub_date=timezone.now() + datetime.timedelta(days=30))
+            self.assertEqual(future_poll.was_published_recently(), False)
+            
+            
+Lo que hemos hecho aquí es crear una subclase de
+:class:`django.test.TestCase` con un método que crea una instancia ``Poll``
+con un valor de ``pub_date``  en el futuro. Luego verificamos la salida de
+``was_published_recently()`` - que *debería* ser False.
+
+Ejecutando pruebas
+--------------------
+
+
+En la terminal, podemos ejecutar nuestro test::
+
+    python manage.py test polls
+
+y veremos algo como esto::
+
+    Creating test database for alias 'default'...
+    F
+    ======================================================================
+    FAIL: test_was_published_recently_with_future_poll (polls.tests.PollMethodTests)
+    ----------------------------------------------------------------------
+    Traceback (most recent call last):
+      File "/path/to/mysite/polls/tests.py", line 16, in test_was_published_recently_with_future_poll
+        self.assertEqual(future_poll.was_published_recently(), False)
+    AssertionError: True != False
+
+    ----------------------------------------------------------------------
+    Ran 1 test in 0.001s
+
+    FAILED (failures=1)
+    Destroying test database for alias 'default'...
+
+Qué paso aquí:
+
+
+* ``python manage.py test polls`` buscó tests en la aplicación polls
+
+* encontró una subclase de la clase :class:`django.test.TestCase`
+
+* creó una base de datos especial para los tests
+
+* buscó los métodos de los test - aquellos cuyo nombre comienza con
+  ``test``
+* en ``test_was_published_recently_with_future_poll`` creó una
+  instancia de ``Poll``  cuyo valor para el campo ``pub_date`` es 30 días en
+  el futuro
+* ... y usando el método ``assertEqual()``  descubrió que
+  ``was_published_recently()``  devuelve ``True``, a pesar de que queríamos
+  que devolviera False
+
+EL informe de pruebas nos informa qué la prueba falló, incluso nos muestra la
+línea en la que se produjo la falla.
+
+Corrigiendo el error o bug
+----------------------------
+
+Ya sabemos cuál es el problema:``Poll.was_published_recently()``
+debería devolver False si el  campo ``pub_date`` tiene un valor en el futuro.
+Corregimos el método en el archivo ``models.py``, para que sólo devuelva ``True``
+si la fecha esta también en el pasado::
+
+    def was_published_recently(self):
+        now = timezone.now()
+        return now - datetime.timedelta(days=1) <= self.pub_date <  now
+
+y ejecutamos nuevamente la prueba::
+
+    Creating test database for alias 'default'...
+    .
+    ----------------------------------------------------------------------
+    Ran 1 test in 0.001s
+    
+    OK
+    Destroying test database for alias 'default'...
+
+Después de identificar un error, escribimos el test que lo expone y
+corregimos el problema en el código para que nuestro test pase.
+
+Muchas otras cosas pueden salir mal con nuestra aplicación en el futuro,
+pero podemos estar seguros de que no vamos a reintroducir este error
+inadvertidamente, porque simplemente al ejecutar el test nos avisaría de 
+inmediato. Podemos considerar esta parte de nuestra aplicación funcionando y
+cubierta a futuro.
+
+Pruebas más exhaustivas
+-----------------------
+
+Mientras estamos aquí, podemos mejorar la cobertura del método
+``was_published_recently()``,  de hecho, sería vergonzoso si
+hubiéramos arreglando un error y al mismo tiempo introducido uno nuevo.
+
+Agregamos dos métodos más a la misma clase, para testear el
+comportamiento del método de forma más exhaustiva::
+
+
+    def test_was_published_recently_with_old_poll(self):
+        """
+        was_published_recently() should return False for polls whose pub_date
+        is older than 1 day
+        """
+        old_poll = Poll(pub_date=timezone.now() - datetime.timedelta(days=30))
+        self.assertEqual(old_poll.was_published_recently(), False)
+
+    def test_was_published_recently_with_recent_poll(self):
+        """
+        was_published_recently() should return True for polls whose pub_date
+        is within the last day
+        """
+        recent_poll = Poll(pub_date=timezone.now() - datetime.timedelta(hours=1))
+        self.assertEqual(recent_poll.was_published_recently(), True)
+
+
+Y ahora tenemos tres tests que confirman que
+``Poll.was_published_recently()``  devuelve valores sensatos para
+encuestas pasadas, recientes y futuras.
+
+De nuevo, ``polls`` es una aplicación simple, pero sin importar lo
+complejo que pueda crecer en el futuro o la interacción que pueda
+tener con otro código, tenemos alguna garantía de que el método
+para el cual hemos escrito tests se comportará de la manera
+esperada.
+
+Testeando una vista
+-------------------
+
+La aplicación ``polls`` no discrimina: va a publicar cualquier
+encuesta, incluyendo aquellas cuyo campo ``pub_date``  tenga un valor
+en el futuro. Deberíamos mejorar esto. Tener un campo ``pub_date`` en el
+futuro debería significar que la encuesta sera publica hasta ese
+momento, pero mientras tanto debe permanecer invisible.
+
+Un test para una vista
+--------------------------- 
+
+Cuando arreglamos el error arriba, escribimos un test primero y
+luego el código que lo arreglaba. De hecho fue un ejemplo simple de
+test-driven development, pero no importa en realidad el orden en
+que lo hicimos.
+
+En nuestro primer test nos concentramos en el comportamiento
+interno del código. Para este test, necesitamos verificar el
+comportamiento como lo experimentaría un usuario mediante un
+navegador.
+
+Antes de intentar arreglar cualquier cosa, veamos las herramientas
+a nuestra disposición.
+
+El cliente para test en Django
+-------------------------------
+
+Django provee un cliente para test, :class:`~django.test.client.Client`
+para simular la interacción del usuario con el código a nivel de vistas.
+Podemos usarlo en ``tests.py`` o incluso en el shell.
+
+Empezaremos de nuevo con el shell, donde necesitamos hacer un par
+de cosas que no serán necesarias en ``tests.py``. La primera es crear
+las variables de entorno en el shell::
+
+    >>> from django.test.utils import setup_test_environment
+    >>> setup_test_environment()
+    
+El método :meth:`~django.test.utils.setup_test_environment` instala una plantilla
+de procesador, lo que permitirá que examinemos algunos atributos adicionales en 
+las respuestas como ``response.context`` que de otro modo no estarían disponibles.
+Ten en cuenta que este método *no* configura la base de datos de prueba, por lo
+que se llevará a cabo  contra la base de datos existente y la salida pueden variar
+ligeramente en función de las encuestas que hayamos creado.    
+    
+A continuación necesitamos importar la clase del cliente para test
+(Después en ``tests.py`` vamos a usar la clase  :class:`django.test.TestCase` ,
+que viene con su propio cliente, así que este paso no será
+requerido)::
+
+    >>> from django.test.client import Client
+    >>> # creamos una instancia del cliente para nuestro uso
+    >>> client = Client()
+
+Con esto listo, podemos pedirle al cliente que haga el trabajo por
+nosotros::
+
+    >>> # get a response from '/'
+    >>> response = client.get('/')
+    >>> # we should expect a 404 from that address
+    >>> response.status_code
+    404
+    >>> # on the other hand we should expect to find something at '/polls/'
+    >>> # we'll use 'reverse()' rather than a harcoded URL
+    >>> from django.core.urlresolvers import reverse
+    >>> response = client.get(reverse('polls:index'))
+    >>> response.status_code
+    200
+    >>> response.content
+    '\n\n\n    <p>No polls are available.</p>\n\n'
+    >>> # note - you might get unexpected results if your ``TIME_ZONE``
+    >>> # in ``settings.py`` is not correct. If you need to change it,
+    >>> # you will also need to restart your shell session
+    >>> from polls.models import Poll
+    >>> from django.utils import timezone
+    >>> # create a Poll and save it
+    >>> p = Poll(question="Who is your favorite Beatle?", pub_date=timezone.now())
+    >>> p.save()
+    >>> # check the response once again
+    >>> response = client.get('/polls/')
+    >>> response.content
+    '\n\n\n    <ul>\n    \n        <li><a href="/polls/1/">Who is your favorite Beatle?</a></li>\n    \n    </ul>\n\n'
+    >>> response.context['latest_poll_list']
+    [<Poll: Who is your favorite Beatle?>]
+    
+    
+Mejorando nuestra vista
+-------------------------
+
+La lista de encuestas nos muestra entradas que no están publicadas
+todavía (i.e. aquellas que tienen ``pub_date`` en el futuro).
+Arreglémoslo.
+
+En el :doc:`Tutorial 4 </intro/tutorial04>` reemplazamos las funciones de
+vistas en ``views.py`` por listas basadas en clases
+:class:`~django.views.generic.list.ListView`::
+
+    class IndexView(generic.ListView):
+        template_name = 'polls/index.html'
+        context_object_name = 'latest_poll_list'
+
+        def get_queryset(self):
+            """Return the last five published polls."""
+            return Poll.objects.order_by('-pub_date')[:5]
+            
+            
+``response.context_data['latest_poll_list']``  extrae los datos que la vista
+pone en el contexto.
+
+Necesitamos modificar el método ``get_queryset`` y cambiarlo de modo que también
+compruebe la fecha, comparándola con la función ``timezone.now()``. En primer
+lugar tenemos que añadir primero la importación ::
+
+    from django.utils import timezone
+
+y luego devemos modificar el método ``get_queryset`` así::
+
+    def get_queryset(self):
+        """
+        Retorna las últimas cinco encuestas publicadas (no incluidas las
+        establecidas para ser publicadas en el futuro).
+        """
+        return Poll.objects.filter(
+            pub_date__lte=timezone.now()
+        ).order_by('-pub_date')[:5]
+
+
+``Poll.objects.filter(pub_date__lte=timezone.now())`` devuelve un
+``queryset``  que contiene las instancias de ``Poll`` cuyo campo ``pub_date``
+es menor o igual que - esto es, anterior o igual a - timezone.now.
+
+
+Testeando nuestra nueva vista
+------------------------------
+
+Ahora podemos verificar que la vista se comporta como esperamos, ejecutamos
+el servidor de desarrollo, cargando el sitio en el navegador, creamos
+``Polls``  con fechas en el pasado y en el futuro y verificamos que
+solamente se muestren aquellas que han sido publicadas. No necesitamos tener que 
+repetir estos pasos *cada vez que se hace un cambio que podría afectar esto* - asi 
+que  vamos a crear una prueba, basándonos en la sesión de arriba con el shell.
+
+Agregamos lo siguiente a polls/tests.py::
+
+    from django.core.urlresolvers import reverse
+
+y creamos un método factory para crear encuestas,  así como también una nueva clase
+de pruebas::
+
+    def create_poll(question, days):
+        """
+        Creates a poll with the given `question` published the given number of
+        `days` offset to now (negative for polls published in the past,
+        positive for polls that have yet to be published).
+        """
+        return Poll.objects.create(question=question,
+            pub_date=timezone.now() + datetime.timedelta(days=days))
+
+    class PollViewTests(TestCase):
+        def test_index_view_with_no_polls(self):
+            """
+            If no polls exist, an appropriate message should be displayed.
+            """
+            response = self.client.get(reverse('polls:index'))
+            self.assertEqual(response.status_code, 200)
+            self.assertContains(response, "No polls are available.")
+            self.assertQuerysetEqual(response.context['latest_poll_list'], [])
+
+        def test_index_view_with_a_past_poll(self):
+            """
+            Polls with a pub_date in the past should be displayed on the index page.
+            """
+            create_poll(question="Past poll.", days=-30)
+            response = self.client.get(reverse('polls:index'))
+            self.assertQuerysetEqual(
+                response.context['latest_poll_list'],
+                ['<Poll: Past poll.>']
             )
 
-       2. Incluir la aplicación de encuestas en la URLconf de su proyecto
-          urls.py de este modo::
+        def test_index_view_with_a_future_poll(self):
+            """
+            Polls with a pub_date in the future should not be displayed on the
+            index page.
+            """
+            create_poll(question="Future poll.", days=30)
+            response = self.client.get(reverse('polls:index'))
+            self.assertContains(response, "No polls are available.", status_code=200)
+            self.assertQuerysetEqual(response.context['latest_poll_list'], [])
 
-            (r'^polls/', include('polls.urls')),
+        def test_index_view_with_future_poll_and_past_poll(self):
+            """
+            Even if both past and future polls exist, only past polls should be
+            displayed.
+            """
+            create_poll(question="Past poll.", days=-30)
+            create_poll(question="Future poll.", days=30)
+            response = self.client.get(reverse('polls:index'))
+            self.assertQuerysetEqual(
+                response.context['latest_poll_list'],
+                ['<Poll: Past poll.>']
+            )
 
-       3. Ejecutar el comando  ``python manage.py syncdb`` para crear los
-          modelos de las encuestas.
+        def test_index_view_with_two_past_polls(self):
+            """
+            The polls index page may display multiple polls.
+            """
+            create_poll(question="Past poll 1.", days=-30)
+            create_poll(question="Past poll 2.", days=-5)
+            response = self.client.get(reverse('polls:index'))
+            self.assertQuerysetEqual(
+                response.context['latest_poll_list'],
+                 ['<Poll: Past poll 2.>', '<Poll: Past poll 1.>']
+            )
+            
+            
 
-       4. Inicia el servidor y visitar la pagina  http://127.0.0.1:8000/admin/ 
-          para crear una encuesta (Necesitas habilitar la interfaz administrativa
-          para poder crear encuestas).
+Vamos a mirarlo más detenidamente.
 
-       5. Visitamos la pagina http://127.0.0.1:8000/polls/ para participar en una encuesta.
+Primero tenemos un método, ``create_poll``,  para evitar la repetición
+en el proceso de crear encuestas.
+
+``test_index_view_with_no_polls``  no crea encuestas, pero verifica
+el mensaje "No polls are available." y verifica que
+``latest_poll_list`` este vacío. Nota  que la clase
+:class:`django.test.TestCase` provee algunos métodos de aserción adicionales. 
+En estos ejemplos  usamos:meth:`~django.test.SimpleTestCase.assertContains()` 
+y el método :meth:`~django.test.TransactionTestCase.assertQuerysetEqual()`.
 
 
-5. Creamos un fichero ``django-polls/setup.py`` con el contenido siguiente::
+En ``test_index_view_with_a_past_poll``, creamos una encuesta y
+verificamos que aparece en el listado.
 
-   
-    from distutils.core import setup
+En ``test_index_view_with_a_future_poll``, creamos una encuesta
+con ``pub_date`` en el futuro. La base de datos se resetea para cada
+método de pruebas, por lo que la primera encuesta ya no existe y
+entonces nuevamente no deberíamos tener ninguna entrada en el
+listado.
 
-    setup(
-        name='django-polls',
-        version='0.1',
-        packages=['polls',],
-	license='',
-        long_description=open('README.txt').read(),
-        url='http://www.example.com/',
-        author='Tu Nombre',
-        author_email='minombre@example.com',
-    )
+Y así sucesivamente. En efecto, estamos usando las pruebas para
+contar una historia, mediante entradas en administrador y la experiencia del
+usuario en el sitio y verificando que en cada estado y para cada
+nuevo cambio en el estado del sistema, se publiquen los resultados
+esperados.
 
-    
-6. Solamente hemos incluido un número limitado de archivos para nuestra aplicación
-   por default. No devemos olvidar incluir las plantillas, ahora creamos un fichero
-   ``django-polls/MANIFEST.in`` con el contenido siguiente::
-       
-       recursive-include polls/templates *
+Testeando DetailView
+--------------------
 
-7. Es opcional, pero recomendado, incluir la documentación detallada de cada
-   aplicación. Creamos un directorio vacío ``django-polls/docs`` para futura
-   documentación. Agregamos una línea adicional a ``django-polls/MANIFEST.in``::
+Lo que tenemos funciona bien; sin embargo, aunque las encuestas
+futuras no aparecen en el *index*, un usuario todavía puede verlas
+si saben o adivinan la URL correctas. Necesitamos  agregar restricciones
+similares para la vista ``DetailView``, para lo cual agregamos::
 
-       recursive-include docs *
+    class DetailView(generic.DetailView):
+        ...
+        def get_queryset(self):
+            """
+            Excludes any polls that aren't published yet.
+            """
+            return Poll.objects.filter(pub_date__lte=timezone.now())
+            
 
-8. Luego construimos el paquete con el comando ``python setup.py sdist``
-   (ejecutamos el comando desde dentro de la carpeta ``django-polls``).
-   Este crea un directorio llamado ``dist`` y construye una nueva
-   aplicación, ``django-polls-0.1.tar.gz``.
-   (Un archivo comprimido con tar.gz) y un archivo ``MANIFEST`` con una
-   lista de los archivos y carpetas incluidas.
 
-Para más información sobre el empaquetado de aplicaciones, puedes ver
-`The Hitchhiker's Guide to Packaging  <http://guide.python-distribute.org/quickstart.html>`_.
+y por supuesto, vamos a agregar algunos tests para verificar  que una
+instancia de ``Poll`` con fecha ``pub_date`` en el pasado se pueda
+mostrar, pero de igual forma una fecha en el futuro no se muestre::
 
-Usar nuestra aplicación
-=======================
+    class PollIndexDetailTests(TestCase):
+        def test_detail_view_with_a_future_poll(self):
+            """
+            La vista de detalles con un campo ``pub_date`` en el futuro retornara
+            un 404, no encontrado.
+            """
+            future_poll = create_poll(question='Future poll.', days=5)
+            response = self.client.get(reverse('polls:detail', args=(future_poll.id,)))
+            self.assertEqual(response.status_code, 404)
 
-Puesto que movimos el directorio ``polls`` fuera del proyecto, éste ya no esta
-funcionamiento en nuestro proyecto. Ahora repararemos eso instalando una
-nueva aplicación el paquete ``django-polls`` que hemos creado.
+        def test_detail_view_with_a_past_poll(self):
+            """
+            La vista de detalles con un  campoa pub_date en el pasado mostrara la
+            encuesta en cuestion.
+            the poll's question.
+            """
+            past_poll = create_poll(question='Past Poll.', days=-5)
+            response = self.client.get(reverse('polls:detail', args=(past_poll.id,)))
+            self.assertContains(response, past_poll.question, status_code=200)
 
-.. admonition:: Instalando una librería al sistema
 
-   En los siguientes pasos instalaremos una librería al sistema
-   la aplicación ``django-polls`` que hemos creado anteriormente.
-   En general, cuando desarrollamos un paquete es mejor evitar
-   instalar bibliotecas al sistema para evitar conflictos y romper
-   otros paquetes. Para este ejemplo simple sin embargo, el riesgo es mínimo y 
-   ayuda a comprender el empaquetamiento en si mismo. Explicaremos cómo
-   desinstalar la  aplicación en el paso 4.
 
-   Para los desarrolladores experimentados, existe una manera más limpia de
-   manejar aplicaciones y es utilizar "virtualenv" (ver mas abajo).
+Ideas para más tests
+----------------------
 
-1. Dentro de ``django-polls/dist``, descomprimimos la aplicación con ``untar``
-   ``django-polls-0.1.tar.gz``(por ejemplo: ``xzvf django-polls-0.1.tar.gz``).
-   Si estamos utilizando Windows, podemos descargar y usar bsdtar_ y
-   usarlo en la linea de ordenes, o también podemos utilizar una herramienta
-   con interfaz-GUI como 7-zip_.
+Deberíamos agregar un método similar a  ``get_queryset``  para la vista
+``DetailView``  y crear una nueva  prueba para esta vista.
+Sería parecido a lo que hemos hecho ya; de hecho, habría bastante
+repetición.
 
-2. Nos cambiamos a el directorio creado en el paso anterior (con ``cd django-polls``).
+Podríamos mejorar nuestra aplicación de otras maneras, agregando tests en el
+camino. Por ejemplo, es tonto permitir que encuestas ``Polls`` sin opciones ``Choices``
+se puedan publicar en el sitio. Entonces, nuestras vistas podrían
+verificar eso  y también excluir esas encuestas. Los tests crearían una
+instancia de ``Poll`` sin ``Choices`` relacionados  y luego verificarían
+que no se publiquen, asi como también que si se crea una instancia de
+Poll *con* Choices, se verifica que *sí* se publica.
 
-3. Si estamos usando GNU/Linux, Mac  o algún tipo de Unix, podemos usar
-   el comando ``sudo python setup.py install`` en el shell.  Si estamos
-   usando  Windows, necesitamos usar el shell de comandos con privilegios de
-   administrador  y ejecutar el comando ``setup.py install``.
+Quizás también los administradores registrados deberían poder ver
+las encuestas no publicadas, pero los demás usuarios no. Una vez más:
+cualquier funcionalidad que necesitemos agregar debe estar
+acompañada por pruebas o tests, ya sea escribiendo el test primero y luego el
+código que lo hace pasar, o escribir el código de la funcionalidad
+primero y luego escribir el test para probarla.
 
-   Con suerte, nuestro proyecto Django debe trabajar correctamente otra vez.
-   Ejecutamos el servidor para confirmarlo.
+En cierto punto uno mira sus tests y se pregunta si el código de
+los tests no está creciendo demasiado, lo que nos lleva a:
 
-4. Para desinstalar el paquete, borramos el directorio ``polls`` y el archivo
-   ``django_polls-0.1.egg-info`` de las bibliotecas de sistema. En GNU/Linux y
-   en Mac OS X  estos ficheros estan  en  ``/usr/local/lib/pythonX.X/dist-packages``, y
-   en Windows, en ``C:\PythonXX\Lib\site-packages`` (donde *X* es el número de
-   versión). Necesitaremos privilegios de administrador.
+Tratándose de tests, más es mejor
+------------------------------------
 
-.. _bsdtar: http://gnuwin32.sourceforge.net/packages/bsdtar.htm
-.. _7-zip: http://www.7-zip.org/
+Puede parecer que nuestros tests están creciendo fuera de control.
+A este ritmo pronto tendremos más código en nuestros tests que en
+nuestra aplicación y la repetición no es estética, comparada con
+lo conciso y elegante del resto de nuestro código.
 
-Publicar la aplicación
-======================
+**No importa**. Dejémoslos crecer. En gran medida, uno escribe un
+test una vez y luego se olvida. Va a seguir cumpliendo su función
+mientras uno continúa desarrollando su programa.
 
-Ahora que hemos empaquetado y testeado ``django-polls``, estamos listos
-para compartirla con ¡todo el mundo! Si esto no fuera un simple ejemplo,
-ahora podríamos:
+Algunas veces los tests van a necesitar actualizarse. Supongamos
+que corregimos nuestras vistas para que solamente se publiquen Polls
+con Choices. En ese caso, muchos de nuestros tests existentes van a
+fallar - *diciéndonos qué tests actualizar y corregir*, así que
+hasta cierto punto los tests pueden cuidarse ellos mismos.
 
-* Enviar por correo electrónico el paquete a un amigo.
+A lo sumo, mientras uno continúa desarrollando, se puede encontrar
+que hay algunos tests que se hacen redundantes. Incluso esto no es
+un problema; en testing, la redundancia es algo *bueno*.
 
-* Subir el paquete a su sitio web.
+Mientras que los tests estén organizados de manera razonable, no se
+van a hacer inmanejables. Algunas buenas prácticas son:
 
-* Postear el paquete a un repositorio público, tal como `The Python Package Index
-  (PyPI) <http://guide.python-distribute.org/contributing.html#pypi-info>`_.
 
-Para más información sobre PyPI, puedes ver la guía rápida `Quickstart
-<http://guide.python-distribute.org/quickstart.html#register-your-package-with-the-python-package-index-pypi>`_
-en la sección sobre ``The Hitchhiker's Guide to Packaging``.
-Un detalle que no esta de mas mencionar es elegir el tipo de licencia bajo
-la cual se distribuye nuestro código.
+* Separar ``TestClass``  para cada modelo o vista
+* Un método de test separado para cada conjunto de condiciones a  probar
+* Nombres de métodos de pruebas que describan su función
 
-Instalar paquetes python con virtualenv
-=======================================
+Pruebas adicionales
+--------------------
 
-Anteriormente, instalamos la aplicación de  encuestas como una biblioteca
-del sistema. Esta tiene algunas desventajas:
- 
-* Al  modificar las bibliotecas del sistema podemos afectar otro software
-  python del sistema.
+Este tutorial solamente presenta lo básico sobre pruebas. Hay
+bastante más que se puede hacer  y existen herramientas muy útiles
+a disposición para lograr cosas muy interesantes.
 
-* No podremos hacer funcionar múltiples versiones de este paquete(o otras
-  con el mismo nombre).
+Por ejemplo, mientras que nuestros tests han cubierto la lógica
+interna de un modelo y la forma en que nuestras vistas publican
+información, podríamos usar un framework "in-browser" como
+Selenium_ para testear la manera en que el HTML se renderiza 
+en un navegador. Estas herramientas nos permiten no sólo verificar el 
+comportamiento de nuestro código Django, si no también, por ejemplo, nuestro
+JavaScript. Es algo muy curioso ver ejecutar los tests en un navegador y
+empezar a interactuar con nuestro sitio como si un humano lo estuviera controlando! 
+Django incluye una clase :class:`~django.test.LiveServerTestCase`
+para facilitar la integración con herramientas como Selenium.
 
-Típicamente, estas situaciones únicamente se presentan si estamos
-manteniendo algunos proyectos Django. Cuando lo hacemos, la mejor solución
-es utilizar *virtualenv*. Esta herramienta permite que podamos mantener
-un ambiente aislado  de múltiples paquetes python, cada uno con sus propias
-copias de las librerías y el nombre del paquete.
+Si tenemos una aplicación compleja, podríamos querer correr los
+tests automáticamente con cada commit con el propósito de
+`continuous integration`_, de tal manera que podemos automatizar - al menos
+parcialmente - el control de calidad.
 
-Puedes aprender más visitando el sitio web 
-`virtualenv <http://www.virtualenv.org/>`_
+Una buena forma de encontrar partes de nuestra aplicación sin
+testear es verificar el cubrimiento del código. Esto también ayuda a
+identificar código frágil o muerto. Si no podemos testear un
+fragmento de código, en general significa que el código debe refactorizarse o
+borrarse. Ver :ref:`topics-testing-code-coverage` for details.
+para más detalles.
 
-Más sobre los aplicaciones reutilizables
-=========================================
 
-Para escribir mas aplicaciones reusables, puedes  ver `What is a reusable app?
-<http://ericholscher.com/projects/django-conventions/app/>`_ de Eric
-Holsher.
-Para una colección de aplicaciones reutilizables que puedas utilizar en
-tus  propios proyectos, puedes ver  el proyecto
-`Pinax <http://pinaxproject.com/>`_.
+:doc:`Testing Django applications </topics/testing/index>` tiene información
+ exhaustiva sobre testing.
 
-Este tutorial termina de momento aquí. Mientras tanto, puede que quieras
-checar algunos algunos puntos en :doc:`where to go from here <whatsnext>`.
+.. _Selenium: http://seleniumhq.org/
+.. _continuous integration: http://en.wikipedia.org/wiki/Continuous_integration
+
+
+¿Qué sigue?
+-----------
+
+Para mas detalles sobre  testing, puedes ver :doc:`Testing in Django
+</topics/testing/index>`.
+
+Cuando te sientas confortable con las pruebas en Django, puedes leer
+:doc:`part 6 of this tutorial</intro/tutorial06>` para aprender sobre el manejo 
+de archivos estáticos.
